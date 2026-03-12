@@ -14,6 +14,8 @@ const int colortex11Format= RGBA16I;        //valid light sample storage in bott
 const int colortex12Format= RGBA16F;        //block lighting
 const int colortex13Format= RGBA16F;        //raw specular lighting
 const int colortex14Format= RGBA16F;        //specular lighting
+const int colortex18Format= R8;             //shadow for voxy chunks (needs reprojection)
+const int colortex19Format= RGBA8;          //scene image for voxy reflections (needs reprojection)
 
 const int shadowcolor2Format = RGBA16f;     //interactive water (low detail)
 */
@@ -35,6 +37,8 @@ const bool colortex11Clear = false;
 const bool colortex12Clear = false;
 const bool colortex13Clear = false;
 const bool colortex14Clear = false;
+const bool colortex18Clear = false;
+const bool colortex19Clear = false;
 
 const bool shadowcolor2Clear = false;
 

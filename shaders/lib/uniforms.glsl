@@ -126,6 +126,20 @@ uniform sampler2DShadow shadowtex1;
     uniform sampler2D dhDepthTex1;
 #endif
 
+#if defined VOXY || defined VOXY_PATCH || defined VOXY_OPAQUE || defined VOXY_TRANSLUCENT
+    uniform int vxRenderDistance;
+
+    uniform mat4 vxModelView;
+    uniform mat4 vxModelViewInv;
+    uniform mat4 vxModelViewPrev;
+    uniform mat4 vxProj;
+    uniform mat4 vxProjInv;
+    uniform mat4 vxProjPrev;
+
+    uniform sampler2D vxDepthTexTrans;
+    uniform sampler2D vxDepthTexOpaque;
+#endif
+
 #if COLORED_LIGHTING_INTERNAL > 0
     uniform usampler3D voxel_sampler;
 #endif

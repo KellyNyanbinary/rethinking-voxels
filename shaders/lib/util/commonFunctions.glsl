@@ -3,20 +3,47 @@
         vec2 lmCoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
         return clamp((lmCoord - 0.03125) * 1.06667, 0.0, 1.0);
     }
-    vec3 GetSunVector() {
-        const vec2 sunRotationData = vec2(cos(sunPathRotation * 0.01745329251994), -sin(sunPathRotation * 0.01745329251994));
-        #ifdef OVERWORLD
-            float ang = fract(timeAngle - 0.25);
-            ang = (ang + (cos(ang * 3.14159265358979) * -0.5 + 0.5 - ang) / 3.0) * 6.28318530717959;
-            return normalize((gbufferModelView * vec4(vec3(-sin(ang), cos(ang) * sunRotationData) * 2000.0, 1.0)).xyz);
-        #elif defined END
-            float ang = 0.0;
-            return normalize((gbufferModelView * vec4(vec3(0.0, sunRotationData * 2000.0), 1.0)).xyz);
-        #else
-            return vec3(0.0);
-        #endif
-    }
 #endif
+
+#if defined VERTEX_SHADER || defined VOXY_PATCH
+vec3 GetSunVector() {
+    const vec2 sunRotationData = vec2(cos(sunPathRotation * 0.01745329251994), -sin(sunPathRotation * 0.01745329251994));
+    #ifdef OVERWORLD
+        float ang = fract(timeAngle - 0.25);
+        ang = (ang + (cos(ang * 3.14159265358979) * -0.5 + 0.5 - ang) / 3.0) * 6.28318530717959;
+        return normalize((gbufferModelView * vec4(vec3(-sin(ang), cos(ang) * sunRotationData) * 2000.0, 1.0)).xyz);
+    #elif defined END
+        float ang = 0.0;
+        return normalize((gbufferModelView * vec4(vec3(0.0, sunRotationData * 2000.0), 1.0)).xyz);
+    #else
+        return vec3(0.0);
+    #endif
+}
+#endif
+
+float GetSkyLightFactor(vec2 lmCoordM, vec3 shadowMult) {
+    #ifdef OVERWORLD
+        float skyLightFactor = max(lmCoordM.y - 0.7, 0.0) * 3.33333;
+              skyLightFactor *= skyLightFactor;
+
+        #if defined GBUFFERS_WATER || defined DH_WATER
+            #if SHADOW_QUALITY > -1 && WATER_REFLECT_QUALITY >= 2
+                skyLightFactor = max(skyLightFactor, dot(shadowMult, shadowMult) * 0.333333);
+            #endif
+        #endif
+    #elif defined END
+        float skyLightFactor = min(1.0, dot(shadowMult, shadowMult) * 0.333333);
+    #else
+        float skyLightFactor = 0.0;
+    #endif
+
+    #ifdef VOXY_TRANSLUCENT
+        // Voxy translucent chunks can under-report skylight; compensate to match vanilla chunks.
+        skyLightFactor = pow(skyLightFactor, 0.25);
+    #endif
+
+    return skyLightFactor;
+}
 
 float GetLuminance(vec3 color) {
     return dot(color, vec3(0.299, 0.587, 0.114));

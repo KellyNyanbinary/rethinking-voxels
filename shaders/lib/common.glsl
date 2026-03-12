@@ -696,7 +696,9 @@
     #endif
 
 //Very Common Stuff//
-    #include "/lib/uniforms.glsl"
+    #ifndef VOXY_PATCH
+        #include "/lib/uniforms.glsl"
+    #endif
 
     #if SHADOW_QUALITY == -1
       float timeAngle = worldTime / 24000.0;
@@ -712,10 +714,12 @@
 
     #include "/lib/util/commonFunctions.glsl"
 
-    #ifndef DISTANT_HORIZONS
-        float renderDistance = far;
-    #else
+    #ifdef DISTANT_HORIZONS
         float renderDistance = float(dhRenderDistance);
+    #elif defined VOXY
+        float renderDistance = vxRenderDistance * 16.0 - 256.0; // Voxy distance can overshoot by a chunk margin.
+    #else
+        float renderDistance = far;
     #endif
 
     const float shadowMapBias = 1.0 - 25.6 / shadowDistance;
