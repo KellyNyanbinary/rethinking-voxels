@@ -191,7 +191,17 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     float skyFade = 0.0;
     float VdotU = dot(nViewPos, upVec);
     float VdotS = dot(nViewPos, sunVec);
-    DoFog(color.rgb, skyFade, lViewPos, playerPos, VdotU, VdotS, dither);
+
+    // Voxy patch depth can be normalized in some contexts, so rescale fog inputs when needed.
+    float fogDistance = lViewPos;
+    vec3 fogPlayerPos = playerPos;
+    if (fogDistance < 8.0) {
+        float voxyDistanceScale = max(renderDistance, far);
+        fogDistance *= voxyDistanceScale;
+        fogPlayerPos *= voxyDistanceScale;
+    }
+
+    DoFog(color.rgb, skyFade, fogDistance, fogPlayerPos, VdotU, VdotS, dither);
 
     float skyLightFactor = GetSkyLightFactor(lmCoordM, shadowMult);
 
