@@ -70,6 +70,7 @@ void DoFoliageColorTweaks(inout vec3 color, inout vec3 shadowMult, inout float s
 //Includes//
 #include "/lib/util/spaceConversion.glsl"
 #include "/lib/util/dither.glsl"
+#include "/lib/atmospherics/fog/mainFog.glsl"
 
 #ifdef ATM_COLOR_MULTS
     #include "/lib/colors/colorMultipliers.glsl"
@@ -186,6 +187,11 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     color.rgb *= (ambient + direct + torch) * dayTone + moonLift;
     color.rgb += emission * 0.02;
     shadowMult = vec3(clamp(ambient + direct, 0.0, 1.0));
+
+    float skyFade = 0.0;
+    float VdotU = dot(nViewPos, upVec);
+    float VdotS = dot(nViewPos, sunVec);
+    DoFog(color.rgb, skyFade, lViewPos, playerPos, VdotU, VdotS, dither);
 
     float skyLightFactor = GetSkyLightFactor(lmCoordM, shadowMult);
 
