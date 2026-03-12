@@ -64,6 +64,9 @@ void DoWave_Leaves(inout vec3 playerPos, vec3 worldPos, float waveMult) {
 }
 
 void DoWave_Water(inout vec3 playerPos, vec3 worldPos) {
+    // Reduce near-water vertical displacement so it matches Voxy water surface better.
+    const float voxySeamWaveScale = 0.45;
+
     #ifdef INTERACTIVE_WATER
         #include "/lib/materials/specificMaterials/translucents/interactiveWaterConsts.glsl"
 
@@ -88,7 +91,7 @@ void DoWave_Water(inout vec3 playerPos, vec3 worldPos) {
                 offset += waveStrengths[k][i] * thisOffset;
             }
         }
-        playerPos.y -= offset;
+        playerPos.y -= offset * voxySeamWaveScale;
     #else
         float waterWaveTime = frameTimeCounter * 6.0 * WAVING_SPEED;
         worldPos.xz *= 14.0;
@@ -102,7 +105,7 @@ void DoWave_Water(inout vec3 playerPos, vec3 worldPos) {
             wave *= 0.1;
         #endif
 
-        playerPos.y += wave * 0.125 - 0.05;
+        playerPos.y += wave * (0.125 * voxySeamWaveScale) - (0.05 * voxySeamWaveScale);
 
         #if defined GBUFFERS_WATER && WATER_STYLE == 1
             normal = mix(normal, tangent, wave * 0.01);
