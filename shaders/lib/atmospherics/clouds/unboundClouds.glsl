@@ -15,7 +15,7 @@
     const float cloudStretch = cloudStretchRaw / float(CLOUD_UNBOUND_SIZE_MULT_M);
 #endif
 
-const float cloudHeight = cloudStretch * 2.0;
+const float cloudLayerHeight = cloudStretch * 2.0;
 
 float Noise3D(vec3 p) {
     p.z = fract(p.z) * 128.0;
@@ -92,7 +92,7 @@ float GetCloudNoise(vec3 tracePos, int cloudAltitude, float lTracePosXZ, float c
 
     noiseMult *= CLOUD_BASE_ADD
                 + CLOUD_FAR_ADD * sqrt(lTracePosXZ + 10.0) // more/less clouds far away
-                + CLOUD_ABOVE_ADD * clamp01(-cloudPlayerPosY / cloudHeight) // more clouds when camera is above them
+                + CLOUD_ABOVE_ADD * clamp01(-cloudPlayerPosY / cloudLayerHeight) // more clouds when camera is above them
                 + CLOUD_UNBOUND_RAIN_ADD * rainFactor; // more clouds during rain
     noise *= noiseMult * CLOUD_UNBOUND_AMOUNT;
 
@@ -180,7 +180,7 @@ vec4 GetVolumetricClouds(int cloudAltitude, float distanceThreshold, inout float
 
             float opacityFactor = min1(cloudNoise * 8.0);
 
-            float cloudShading = 1.0 - (higherPlaneAltitude - tracePos.y) / cloudHeight;
+            float cloudShading = 1.0 - (higherPlaneAltitude - tracePos.y) / cloudLayerHeight;
             cloudShading *= 1.0 + 0.75 * VdotSM3 * (1.0 - opacityFactor);
 
             vec3 colorSample = cloudAmbientColor * (0.7 + 0.3 * cloudShading) + cloudLightColor * cloudShading;

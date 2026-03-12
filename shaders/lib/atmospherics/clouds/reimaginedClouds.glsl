@@ -1,7 +1,7 @@
 #include "/lib/atmospherics/clouds/cloudCoord.glsl"
 
 const float cloudStretch = 5.5;
-const float cloudHeight  = cloudStretch * 2.0;
+const float cloudLayerHeight  = cloudStretch * 2.0;
 
 bool GetCloudNoise(vec3 tracePos, inout vec3 tracePosM, int cloudAltitude) {
     tracePosM = ModifyTracePos(tracePos, cloudAltitude);
@@ -79,7 +79,7 @@ vec4 GetVolumetricClouds(int cloudAltitude, float distanceThreshold, inout float
                 }
             #endif
 
-            float cloudShading = 1.0 - (higherPlaneAltitude - tracePos.y) / cloudHeight;
+            float cloudShading = 1.0 - (higherPlaneAltitude - tracePos.y) / cloudLayerHeight;
             float VdotSM1 = max0(sunVisibility > 0.5 ? VdotS : - VdotS);
 
             #if CLOUD_QUALITY >= 2

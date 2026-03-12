@@ -34,11 +34,12 @@ float InterleavedGradientNoiseForClouds() {
     }
 #endif
 
-#ifdef CLOUDS_REIMAGINED
-    #include "/lib/atmospherics/clouds/reimaginedClouds.glsl"
-#endif
+// Some presets/mod patch paths can end up defining both cloud style macros.
+// Keep these includes mutually exclusive to avoid duplicate global declarations.
 #ifdef CLOUDS_UNBOUND
     #include "/lib/atmospherics/clouds/unboundClouds.glsl"
+#elif defined CLOUDS_REIMAGINED
+    #include "/lib/atmospherics/clouds/reimaginedClouds.glsl"
 #endif
 
 vec4 GetClouds(inout float cloudLinearDepth, float skyFade, vec3 cameraPos, vec3 playerPos,
