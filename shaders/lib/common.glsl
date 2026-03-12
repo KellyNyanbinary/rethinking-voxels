@@ -680,6 +680,15 @@
         #endif
     #endif
 
+    #if defined VOXY_PATCH && !defined VOXY_PROGRAM
+        // External Voxy patch programs can have stricter sampler binding limits/state.
+        // Disable optional texture-heavy paths in this context to avoid runtime texture usage faults.
+        #undef PER_PIXEL_LIGHT
+        #undef VOXEL_RT_REFLECTIONS
+        #undef INTERACTIVE_WATER
+        #undef DISTANT_LIGHT_BOKEH
+    #endif
+
 
 //Activate Settings//
     #ifdef POM_ALLOW_CUTOUT
@@ -698,6 +707,29 @@
 //Very Common Stuff//
     #ifndef VOXY_PATCH
         #include "/lib/uniforms.glsl"
+    #else
+        #if !defined VOXY_PROGRAM
+            // Minimal fallback declarations for external Voxy patch shaders.
+            // Keep this small to avoid reintroducing broad sampler-state conflicts.
+            uniform sampler2D colortex8;
+            uniform sampler2D colortex9;
+            uniform sampler2D shadowcolor2;
+            uniform sampler2D shadowcolor3;
+            #define RV_HAS_COLORTEX8_UNIFORM 1
+            #define RV_HAS_COLORTEX9_UNIFORM 1
+            #define RV_HAS_SHADOWCOLOR2_UNIFORM 1
+            #define RV_HAS_SHADOWCOLOR3_UNIFORM 1
+        #endif
+    #endif
+
+    #if __VERSION__ >= 140
+        // Opti/Iris legacy code paths still call shadow2D; map to texture() for modern GLSL.
+        #define shadow2D(shadowSampler, shadowCoord) vec4(texture(shadowSampler, shadowCoord))
+    #endif
+
+    #ifndef IRIS_FEATURE_HIGHER_SHADOWCOLOR
+        #define shadowcolor2 shadowcolor1
+        #define shadowcolor3 shadowcolor1
     #endif
 
     #if SHADOW_QUALITY == -1

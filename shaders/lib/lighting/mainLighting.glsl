@@ -1,5 +1,16 @@
 vec3 fractCamPos = cameraPositionInt.y == -98257195 ? fract(cameraPosition) : cameraPositionFract;
 
+#if defined VOXY_PATCH && !defined VOXY_PROGRAM
+    // External Voxy patch compiles may not bind/declare this auxiliary texture set.
+    #undef PER_PIXEL_LIGHT
+#endif
+
+#ifndef RV_HAS_COLORTEX8_UNIFORM
+    // If this auxiliary texture is not declared in the current compile unit,
+    // force-disable the optional branch that samples it.
+    #undef PER_PIXEL_LIGHT
+#endif
+
 //Lighting Includes//
 #include "/lib/colors/lightAndAmbientColors.glsl"
 #include "/lib/lighting/ggx.glsl"

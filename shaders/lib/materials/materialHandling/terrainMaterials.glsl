@@ -1,3 +1,4 @@
+#if !defined VOXY_PATCH || defined VOXY_PROGRAM
 if (mat >= 10000) {
 if (mat < 11024) {
     if (mat < 10512) {
@@ -2635,6 +2636,7 @@ if (mat < 11024) {
         }
     }
 }
+#endif
 }
 
 #ifdef GBUFFERS_TERRAIN

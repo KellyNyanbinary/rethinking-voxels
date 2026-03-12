@@ -3,6 +3,8 @@
 /////////////////////////////////////
 
 #define VOXY_PATCH
+#define VOXY_PROGRAM
+#define VOXY_TRANSLUCENT
 #define texture2DLod textureLod
 #define texture2D texture
 
@@ -12,6 +14,14 @@ mat4 gbufferPreviousModelView = vxModelViewPrev;
 mat4 gbufferProjection = vxProj;
 mat4 gbufferProjectionInverse = vxProjInv;
 mat4 gbufferPreviousProjection = vxProjPrev;
+
+#ifdef PER_PIXEL_LIGHT
+    #undef PER_PIXEL_LIGHT
+#endif
+
+#ifdef INTERACTIVE_WATER
+    #undef INTERACTIVE_WATER
+#endif
 
 //Common//
 #include "/lib/common.glsl"
@@ -140,7 +150,10 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     tbnMatrix = mat3(tangent.x, binormal.x, normal.x,
                      tangent.y, binormal.y, normal.y,
                      tangent.z, binormal.z, normal.z);
-    viewVector = vec3(playerPos.x, playerPos.z, 0);
+    // Parallax control for distant Voxy water: damp XY while keeping a stable Z denominator.
+    viewVector = tbnMatrix * viewPos;
+    viewVector.xy *= 0.25;
+    viewVector.z = sign(viewVector.z) * max(abs(viewVector.z), 0.35);
 
     float dither = Bayer64(gl_FragCoord.xy);
     #ifdef TAA
@@ -162,16 +175,18 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     bool noSmoothLighting = false, noDirectionalShading = false, translucentMultCalculated = false, noGeneratedNormals = false;
     int subsurfaceMode = 0;
     float smoothnessG = 0.0, highlightMult = 1.0, reflectMult = 0.0, emission = 0.0;
-    vec3 geoNormal = normal, normalM = normal, shadowMult = vec3(1.0);
-    vec3 worldGeoNormal = normalize(mat3(vxModelViewInv) * normal);
+    vec3 normalM = VdotN > 0.0 ? -normal : normal; // Inverted water normal workaround parity.
+    vec3 geoNormal = normalM;
+    vec3 shadowMult = vec3(1.0);
+    vec3 worldGeoNormal = normalize(mat3(vxModelViewInv) * geoNormal);
     float fresnel = clamp(1.0 + dot(normalM, nViewPos), 0.0, 1.0);
     float fresnelM = pow3(fresnel);
 
-    #include "/lib/materials/materialHandling/translucentMaterials.glsl"
+    #include "/lib/materials/materialHandling/translucentMaterials_voxy.glsl"
 
     DoLighting(color, shadowMult, playerPos, viewPos, lViewPos, geoNormal, normalM, dither,
                worldGeoNormal, lmCoordM, noSmoothLighting, noDirectionalShading, false,
-               false, subsurfaceMode, smoothnessG, highlightMult, emission);
+               false, subsurfaceMode, smoothnessG, materialMask, highlightMult, emission);
 
     // Reflections
     float skyLightFactor = GetSkyLightFactor(lmCoordM, shadowMult);
@@ -194,6 +209,19 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         vec4 reflection = vec4(0.0);
     #endif
     ////
+
+    if (mat == 32000) {
+        // Smooth near/far water seam with an adaptive distance blend.
+        float fadeStart = max(24.0, renderDistance * 0.18);
+        float fadeEnd = max(fadeStart + 220.0, renderDistance * 1.15);
+        float waterFade = smoothstep(fadeStart, fadeEnd, lViewPos);
+        waterFade = sqrt(waterFade);
+
+        vec3 baseWater = colorP.rgb * glColor.rgb;
+        color.rgb = mix(color.rgb, baseWater, waterFade * 0.82);
+        color.rgb = mix(color.rgb, fogColor, waterFade * 0.48);
+        color.a = mix(color.a, min1(color.a + 0.28), waterFade * 0.55);
+    }
 
     // Writing to: 0 (defined in voxy.json)
     gbufferData0 = color;

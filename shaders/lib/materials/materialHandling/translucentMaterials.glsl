@@ -1,3 +1,11 @@
+#ifdef VOXY_PATCH
+    #undef CONNECTED_GLASS_EFFECT
+    #undef GENERATED_NORMALS
+    #undef CUSTOM_PBR
+#endif
+
+#if !defined VOXY_PATCH || defined VOXY_PROGRAM
+
 if (mat < 32008) {
     if (mat < 30016) {
         if (mat < 30008) {
@@ -138,3 +146,4 @@ if (mat < 32008) {
         }
     }
 }
+#endif

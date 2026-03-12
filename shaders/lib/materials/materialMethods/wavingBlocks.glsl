@@ -1,5 +1,10 @@
 #include "/lib/misc/voxelization.glsl"
 
+#if defined VOXY_PATCH && !defined VOXY_PROGRAM
+    // Avoid interactive-water texture dependencies in externally patched shader contexts.
+    #undef INTERACTIVE_WATER
+#endif
+
 vec3 GetRawWave(in vec3 pos, float wind) {
     float magnitude = sin(wind * 0.0027 + pos.z + pos.y) * 0.04 + 0.04;
     float d0 = sin(wind * 0.0127);

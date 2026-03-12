@@ -1,4 +1,15 @@
 // ============================== Step 1: Color Prep ============================== //
+#if defined VOXY_PATCH && !defined VOXY_PROGRAM
+    // External Voxy patch shaders may not expose interactive-water textures.
+    #undef INTERACTIVE_WATER
+#endif
+
+#if !defined(RV_HAS_COLORTEX9_UNIFORM) || !defined(RV_HAS_SHADOWCOLOR2_UNIFORM) || !defined(RV_HAS_SHADOWCOLOR3_UNIFORM)
+    // Interactive-water path depends on these auxiliary textures; disable it if
+    // they are not declared in the active shader compile context.
+    #undef INTERACTIVE_WATER
+#endif
+
 #if MC_VERSION >= 11300
     #if WATERCOLOR_MODE >= 2
         vec3 glColorM = glColor.rgb;
@@ -44,7 +55,7 @@
     noGeneratedNormals = true;
 #endif
 
-#if defined GBUFFERS_WATER || defined DH_WATER
+#if defined GBUFFERS_WATER || defined DH_WATER || (defined VOXY_PROGRAM && defined VOXY_TRANSLUCENT)
     lmCoordM.y = min(lmCoord.y * 1.07, 1.0); // Iris/Sodium skylight inconsistency workaround
     
     float fresnel2 = pow2(fresnel);
@@ -67,7 +78,12 @@
             float blockRes = absMidCoordPos.x * atlasSize.x * 2.0;
             waterPos = floor(waterPos * blockRes) / blockRes;
         #endif
-        waterPos = 0.032 * (waterPos + worldPos.y * 2.0);
+        #if defined VOXY_PROGRAM && defined VOXY_TRANSLUCENT
+            // Distant Voxy water tends to look over-dense; lower frequency to match near chunks.
+            waterPos = 0.018 * (waterPos + worldPos.y * 2.0);
+        #else
+            waterPos = 0.032 * (waterPos + worldPos.y * 2.0);
+        #endif
     #endif
 
     #if WATER_STYLE >= 2 || RAIN_PUDDLES >= 1 && WATER_STYLE == 1 && WATER_MAT_QUALITY >= 2
@@ -136,7 +152,11 @@
                 #define WATER_BUMPINESS_M WATER_BUMPINESS * 0.8
 
                 #if WATER_STYLE >= 2
-                    waterPosM *= 2.5; wind *= 2.5;
+                    #if defined VOXY_PROGRAM && defined VOXY_TRANSLUCENT
+                        waterPosM *= 1.4; wind *= 1.4;
+                    #else
+                        waterPosM *= 2.5; wind *= 2.5;
+                    #endif
 
                     #if WATER_MAT_QUALITY >= 2
                         vec2 parallaxMult = -0.01 * viewVector.xy / viewVector.z;
@@ -207,6 +227,8 @@
                 float depthT = texelFetch(depthtex1, texelCoord, 0).r;
             #elif defined DH_WATER
                 float depthT = texelFetch(dhDepthTex1, texelCoord, 0).r;
+            #elif defined VOXY_PROGRAM && defined VOXY_TRANSLUCENT
+                float depthT = texelFetch(vxDepthTexOpaque, texelCoord, 0).r;
             #endif
             vec3 screenPosT = vec3(screenPos.xy, depthT);
             #ifdef TAA
@@ -215,6 +237,18 @@
                 vec3 viewPosT = ScreenToView(screenPosT);
             #endif
             float lViewPosT = length(viewPosT);
+
+            #if defined GBUFFERS_WATER && defined VOXY
+                float depthLod = texelFetch(vxDepthTexOpaque, texelCoord, 0).r;
+                vec3 screenPosLod = vec3(screenPos.xy, depthLod);
+                vec4 iProjDiag = vec4(vxProjInv[0].x,
+                                      vxProjInv[1].y,
+                                      vxProjInv[2].zw);
+                vec3 p3 = screenPosLod * 2.0 - 1.0;
+                vec4 viewPosLod = iProjDiag * p3.xyzz + vxProjInv[3];
+                viewPosLod.xyz = viewPosLod.xyz / viewPosLod.w;
+                lViewPosT = min(lViewPosT, length(viewPosLod));
+            #endif
             float lViewPosDifM = lViewPos - lViewPosT;
 
             #if WATER_STYLE < 3
@@ -312,7 +346,7 @@
 
     color.a = mix(color.a, 1.0, fresnel4);
 
-    #ifdef GBUFFERS_WATER
+    #if defined GBUFFERS_WATER || (defined VOXY_PROGRAM && defined VOXY_TRANSLUCENT)
         #if WATER_STYLE == 3 || WATER_STYLE == 2 && SUN_MOON_STYLE >= 2
             smoothnessG = 1.0;
 
@@ -321,11 +355,24 @@
             vec3 lightNormal = normalize(vec3(lightNormalP, 1.0) * tbnMatrix);
             highlightMult = dot(lightNormal, lightVec);
             highlightMult = max0(highlightMult) / max(dot(normal, lightVec), 0.17);
-            highlightMult = mix(pow2(pow2(highlightMult * 1.1)), 1.0, min1(sqrt(miplevel) * 0.45)) * 0.24;
+            highlightMult = pow2(pow2(highlightMult * 1.1));
+
+            #ifdef GBUFFERS_WATER
+                float highlightBlend = min1(sqrt(miplevel) * 0.45);
+            #else
+                float fovScale = gbufferProjection[1][1];
+                float scaleFactor = min1(fovScale * 20.0 / lViewPos);
+                float highlightBlend = 1.0 - scaleFactor;
+            #endif
+            highlightMult = 0.24 * mix(highlightMult, 1.0, highlightBlend);
         #else
             smoothnessG = 0.5;
 
-            highlightMult = min(pow2(pow2(dot(colorP.rgb, colorP.rgb) * 0.4)), 0.5);
+            #if defined GBUFFERS_WATER || (defined VOXY_PROGRAM && defined VOXY_TRANSLUCENT)
+                highlightMult = min(pow2(pow2(dot(colorP.rgb, colorP.rgb) * 0.4)), 0.5);
+            #else
+                highlightMult = 0.12;
+            #endif
             highlightMult *= (16.0 - 15.0 * fresnel2) * (sunVisibility > 0.5 ? 0.85 : 0.425);
         #endif
     #endif

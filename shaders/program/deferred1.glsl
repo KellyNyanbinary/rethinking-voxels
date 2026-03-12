@@ -539,8 +539,13 @@ void main() {
                 vec2 absCamPosXZ = abs(cameraPosition.xz);
                 float maxCamPosXZ = max(absCamPosXZ.x, absCamPosXZ.y);
 
-                if (gl_Fog.start / far > 0.5 || maxCamPosXZ > 350.0) vlFactor = max(vlFactor - OSIEBCA*2, 0.0);
-                else                                                 vlFactor = min(vlFactor + OSIEBCA*2, 1.0);
+                bool isEnderDragonDead = maxCamPosXZ > 350.0;
+                #if !defined VOXY && !defined VOXY_PATCH
+                    isEnderDragonDead = gl_Fog.start / far > 0.5 || maxCamPosXZ > 350.0;
+                #endif
+
+                if (isEnderDragonDead) vlFactor = max(vlFactor - OSIEBCA*2, 0.0);
+                else                   vlFactor = min(vlFactor + OSIEBCA*2, 1.0);
             }
         #endif
     #endif

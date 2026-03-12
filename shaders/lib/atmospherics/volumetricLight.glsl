@@ -177,7 +177,7 @@ vec4 GetVolumetricLight(inout vec3 color, inout float vlFactor, vec3 translucent
 
                 #if SHADOW_QUALITY >= 1
                     if (shadowSample == 0.0) {
-                        float testsample = shadow2D(shadowtex1, shadowPosition.xyz).z;
+                        float testsample = texture(shadowtex1, shadowPosition.xyz);
                         if (testsample == 1.0) {
                             vec3 colsample = texture2D(shadowcolor1, shadowPosition.xy).rgb * 4.0;
                             colsample *= colsample;

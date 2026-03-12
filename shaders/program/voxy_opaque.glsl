@@ -3,6 +3,8 @@
 /////////////////////////////////////
 
 #define VOXY_PATCH
+#define VOXY_PROGRAM
+#define VOXY_OPAQUE
 #define texture2DLod textureLod
 #define texture2D texture
 
@@ -12,6 +14,10 @@ mat4 gbufferPreviousModelView = vxModelViewPrev;
 mat4 gbufferProjection = vxProj;
 mat4 gbufferProjectionInverse = vxProjInv;
 mat4 gbufferPreviousProjection = vxProjPrev;
+
+#ifdef PER_PIXEL_LIGHT
+    #undef PER_PIXEL_LIGHT
+#endif
 
 //Common//
 #include "/lib/common.glsl"
@@ -72,10 +78,6 @@ void DoFoliageColorTweaks(inout vec3 color, inout vec3 shadowMult, inout float s
 #ifdef TAA
     #include "/lib/antialiasing/jitter.glsl"
 #endif
-
-#define GBUFFERS_TERRAIN
-    #include "/lib/lighting/mainLighting.glsl"
-#undef GBUFFERS_TERRAIN
 
 #ifdef SNOWY_WORLD
     #include "/lib/materials/materialMethods/snowyWorld.glsl"
@@ -141,16 +143,59 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     vec2 absMidCoordPos = vec2(999999999.0);
     vec2 texCoord = vec2(999999999.0);
 
-    #include "/lib/materials/materialHandling/terrainMaterials.glsl"
+    #include "/lib/materials/materialHandling/terrainMaterials_voxy.glsl"
 
     #ifdef SNOWY_WORLD
         DoSnowyWorld(color, smoothnessG, highlightMult, smoothnessD, emission,
                      playerPos, lmCoord, snowFactor, snowMinNdotU, NdotU, subsurfaceMode);
     #endif
 
-    DoLighting(color, shadowMult, playerPos, viewPos, lViewPos, geoNormal, normalM, dither,
-               worldGeoNormal, lmCoordM, noSmoothLighting, noDirectionalShading, noVanillaAO,
-               centerShadowBias, subsurfaceMode, smoothnessG, highlightMult, emission);
+    // Sampler-safe lighting to keep Voxy opaque runtime stable.
+    vec3 litNormal = normalize(normalM);
+    float skyLight = clamp(lmCoordM.y, 0.0, 1.0);
+    float blockLight = clamp(lmCoordM.x, 0.0, 1.0);
+
+    float NdotL = max0(dot(litNormal, lightVec));
+    float upFacing = clamp(dot(litNormal, upVec) * 0.5 + 0.5, 0.0, 1.0);
+
+    // Directional darkening acts as a lightweight stand-in for distant cast shadows.
+    float directionalShade = mix(0.08, 1.0, pow(NdotL, 1.55));
+    directionalShade *= mix(0.58, 1.0, shadowTime);
+
+    float ambient = mix(0.14, 0.62, skyLight) * mix(0.76, 1.08, upFacing);
+    float direct = (0.08 + 0.92 * sunVisibility) * (0.16 + 0.84 * skyLight) * directionalShade;
+
+    // Extra contrast terms to make distant relief read as shadowed terrain.
+    float sideShadow = pow(1.0 - NdotL, 1.8);
+    float valleyShadow = pow(1.0 - upFacing, 1.7);
+    float farShadowBoost = smoothstep(48.0, 220.0, lViewPos);
+    float pseudoShadow = clamp(sideShadow * 0.75 + valleyShadow * 0.55, 0.0, 1.0);
+    pseudoShadow *= mix(0.35, 0.95, farShadowBoost) * (0.25 + 0.75 * skyLight);
+
+    direct *= 1.0 - 0.78 * pseudoShadow * (0.3 + 0.7 * sunVisibility);
+    ambient *= 1.0 - 0.42 * pseudoShadow;
+
+    #if SHADOW_QUALITY > -1 && (defined OVERWORLD || defined END)
+        // Minimal shadow-map probe for real cast silhouettes (e.g. trees) on distant terrain.
+        vec3 shadowPos = PlayerToShadow(playerPos + normalM * 0.02);
+        float distb = sqrt(shadowPos.x * shadowPos.x + shadowPos.y * shadowPos.y);
+        float distortFactor = distb * shadowMapBias + (1.0 - shadowMapBias);
+        shadowPos.xy /= distortFactor;
+        shadowPos.z *= 0.2;
+        shadowPos = shadowPos * 0.5 + 0.5;
+
+        float mapShadow = texture(shadowtex0, vec3(shadowPos.xy, shadowPos.z));
+        float castShadow = smoothstep(0.08, 0.88, mapShadow);
+        // Blend in with distance and sunlight so it does not look painted at night.
+        float castMix = smoothstep(36.0, 220.0, lViewPos) * (0.2 + 0.8 * sunVisibility);
+        direct *= mix(1.0, castShadow, castMix);
+    #endif
+
+    float torch = pow(blockLight, 1.2) * 0.5;
+
+    color.rgb *= ambient + direct + torch;
+    color.rgb += emission * 0.02;
+    shadowMult = vec3(clamp(ambient + direct, 0.0, 1.0));
 
     float skyLightFactor = GetSkyLightFactor(lmCoordM, shadowMult);
 

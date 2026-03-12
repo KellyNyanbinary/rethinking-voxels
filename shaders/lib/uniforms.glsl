@@ -80,6 +80,10 @@ uniform sampler2D colortex6;
 uniform sampler2D colortex7;
 uniform sampler2D colortex8;
 uniform sampler2D colortex9;
+#define RV_HAS_COLORTEX8_UNIFORM 1
+#define RV_HAS_COLORTEX9_UNIFORM 1
+uniform sampler2D colortex18;
+uniform sampler2D colortex19;
 uniform sampler2D depthtex0;
 uniform sampler2D depthtex1;
 uniform sampler2D depthtex2;
@@ -101,6 +105,8 @@ uniform sampler2D shadowcolor1;
 #ifdef IRIS_FEATURE_HIGHER_SHADOWCOLOR
     uniform sampler2D shadowcolor2;
     uniform sampler2D shadowcolor3;
+    #define RV_HAS_SHADOWCOLOR2_UNIFORM 1
+    #define RV_HAS_SHADOWCOLOR3_UNIFORM 1
 #endif
 
 uniform sampler2DShadow shadowtex1;
@@ -140,7 +146,7 @@ uniform sampler2DShadow shadowtex1;
     uniform sampler2D vxDepthTexOpaque;
 #endif
 
-#if COLORED_LIGHTING_INTERNAL > 0
+#if COLORED_LIGHTING_INTERNAL > 0 || defined VOXY_PATCH || defined VOXY_PROGRAM
     uniform usampler3D voxel_sampler;
 #endif
 

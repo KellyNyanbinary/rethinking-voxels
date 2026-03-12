@@ -196,7 +196,11 @@ void DoWaterFog(inout vec3 color, float lViewPos) {
 }
 
 void DoLavaFog(inout vec3 color, float lViewPos) {
-    float fog = (lViewPos * 3.0 - gl_Fog.start) * gl_Fog.scale;
+    #if !defined VOXY && !defined VOXY_PATCH
+        float fog = (lViewPos * 3.0 - gl_Fog.start) * gl_Fog.scale;
+    #else
+        float fog = 1.0;
+    #endif
 
     #ifdef LESS_LAVA_FOG
         fog = sqrt(fog) * 0.4;

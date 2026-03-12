@@ -68,12 +68,30 @@ vec4 GetReflection(vec3 normalM, vec3 viewPos, vec3 nViewPos, vec3 playerPos, fl
             int sr = 0;
             float dist = 0.0;
             vec3 rfragpos = vec3(0.0);
+            float sampleDepth = 1.0;
             for (int i = 0; i < 30; i++) {
                 refPos = nvec3(gbufferProjection * vec4(viewPosRT, 1.0)) * 0.5 + 0.5;
                 if (abs(refPos.x - 0.5) > rEdge.x || abs(refPos.y - 0.5) > rEdge.y) break;
 
-                rfragpos = vec3(refPos.xy, texture2D(depthtex, refPos.xy).r);
-                rfragpos = nvec3(gbufferProjectionInverse * vec4(rfragpos * 2.0 - 1.0, 1.0));
+                sampleDepth = texture2D(depthtex, refPos.xy).r;
+                rfragpos = nvec3(gbufferProjectionInverse * vec4(vec3(refPos.xy, sampleDepth) * 2.0 - 1.0, 1.0));
+
+                #if defined GBUFFERS_WATER && (defined DISTANT_HORIZONS || defined VOXY)
+                    if (sampleDepth >= 1.0) {
+                        #ifdef VOXY
+                            sampleDepth = texture2D(vxDepthTexOpaque, refPos.xy).r;
+                            if (sampleDepth < 1.0) {
+                                rfragpos = nvec3(vxProjInv * vec4(vec3(refPos.xy, sampleDepth) * 2.0 - 1.0, 1.0));
+                            }
+                        #endif
+                        #ifdef DISTANT_HORIZONS
+                            sampleDepth = texture2D(dhDepthTex1, refPos.xy).r;
+                            if (sampleDepth < 1.0) {
+                                rfragpos = nvec3(dhProjectionInverse * vec4(vec3(refPos.xy, sampleDepth) * 2.0 - 1.0, 1.0));
+                            }
+                        #endif
+                    }
+                #endif
                 dist = length(start - rfragpos);
 
                 float err = length(viewPosRT - rfragpos);
@@ -90,13 +108,29 @@ vec4 GetReflection(vec3 normalM, vec3 viewPos, vec3 nViewPos, vec3 playerPos, fl
             }
 
             // Finalizing Terrain Reflection and Alpha 
-            if (refPos.z < 0.99997) {
+            refPos.z = sampleDepth;
+            if (refPos.z < 1.0) {
                 vec2 absPos = abs(refPos.xy - 0.5);
                 vec2 cdist = absPos / rEdge;
                 float border = clamp(1.0 - pow(max(cdist.x, cdist.y), 50.0), 0.0, 1.0);
                 reflection.a = border;
 
                 float lViewPosRT = length(rfragpos);
+
+                #if defined VOXY_PROGRAM && defined VOXY_TRANSLUCENT
+                    if (refPos.x > 0.0 && refPos.x < 1.0 && refPos.y > 0.0 && refPos.y < 1.0) {
+                        // Voxy translucent water renders before deferred; reproject to previous frame.
+                        vec4 viewPosPrev = vxProjInv * vec4(refPos * 2.0 - 1.0, 1.0);
+                        viewPosPrev /= viewPosPrev.w;
+
+                        viewPosPrev = vxModelViewInv * viewPosPrev;
+
+                        vec4 previousPosition = viewPosPrev + vec4(cameraPosition - previousCameraPosition, 0.0);
+                        previousPosition = vxModelViewPrev * previousPosition;
+                        previousPosition = vxProjPrev * previousPosition;
+                        refPos.xy = previousPosition.xy / previousPosition.w * 0.5 + 0.5;
+                    }
+                #endif
 
                 if (reflection.a > 0.001) {
                     vec2 edgeFactor = pow2(pow2(pow2(cdist)));
@@ -111,8 +145,13 @@ vec4 GetReflection(vec3 normalM, vec3 viewPos, vec3 nViewPos, vec3 playerPos, fl
 
                         reflection.rgb = texture2DLod(colortex0, refPos.xy, lod).rgb;
                     #else
-                        reflection = texture2D(gaux2, refPos.xy);
-                        reflection.rgb = pow2(reflection.rgb + 1.0);
+                        #if !(defined VOXY_PROGRAM && defined VOXY_TRANSLUCENT)
+                            reflection = texture2D(gaux2, refPos.xy);
+                            reflection.rgb = pow2(reflection.rgb + 1.0);
+                        #else
+                            reflection = vec4(texture2D(colortex19, refPos.xy).rgb, 1.0);
+                            reflection.rgb = pow2(reflection.rgb * 2.0);
+                        #endif
                     #endif
 
                     float skyFade = 0.0;
