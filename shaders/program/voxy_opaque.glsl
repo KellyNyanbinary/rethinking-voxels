@@ -200,7 +200,14 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         fogDistance *= voxyDistanceScale;
         fogPlayerPos *= voxyDistanceScale;
     }
+    // Start fog earlier, but keep the overall effect softer than heavy distance scaling.
+    const float voxyFogStartBias = 128.0;
+    const float voxyFogStrength = 1.0;
+    fogDistance = (fogDistance + voxyFogStartBias) * voxyFogStrength;
+    fogPlayerPos *= voxyFogStrength;
 
+    // Force fog to span full vertical height by minimizing altitude falloff.
+    fogPlayerPos.y = 0.0;
     DoFog(color.rgb, skyFade, fogDistance, fogPlayerPos, VdotU, VdotS, dither);
 
     float skyLightFactor = GetSkyLightFactor(lmCoordM, shadowMult);
