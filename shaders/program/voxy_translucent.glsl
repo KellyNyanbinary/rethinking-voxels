@@ -211,28 +211,24 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     ////
 
     if (mat == 32000) {
-        // Use horizontal distance to match the near/far terrain handoff boundary.
-        float horizDist = length(playerPos.xz);
-
-        // In Voxy context, renderDistance can be much larger than the seam location.
-        // Anchor blending to the regular terrain far range instead.
-        float fadeStart = max(24.0, far * 0.38);
-        float fadeEnd = max(fadeStart + 120.0, far * 0.95);
-        float waterFade = smoothstep(fadeStart, fadeEnd, horizDist);
+        // Smooth near/far water seam with an adaptive distance blend.
+        float fadeStart = max(24.0, renderDistance * 0.18);
+        float fadeEnd = max(fadeStart + 220.0, renderDistance * 1.15);
+        float waterFade = smoothstep(fadeStart, fadeEnd, lViewPos);
         waterFade = sqrt(waterFade);
 
         // Extra blend focused around the renderer handoff distance to hide the hard line.
-        float seamCenter = far * 0.92;
-        float seamWidth = max(32.0, far * 0.22);
-        float seamFade = 1.0 - smoothstep(0.0, seamWidth, abs(horizDist - seamCenter));
+        float seamCenter = renderDistance * 0.95;
+        float seamWidth = max(42.0, renderDistance * 0.24);
+        float seamFade = 1.0 - smoothstep(0.0, seamWidth, abs(lViewPos - seamCenter));
 
         vec3 baseWater = colorP.rgb * glColor.rgb;
         color.rgb = mix(color.rgb, baseWater, waterFade * 0.82);
         color.rgb = mix(color.rgb, fogColor, waterFade * 0.48);
         vec3 seamTarget = mix(baseWater, skyColor * 0.8 + baseWater * 0.4, 0.6);
-        color.rgb = mix(color.rgb, seamTarget, seamFade * 0.86);
+        color.rgb = mix(color.rgb, seamTarget, seamFade * 0.72);
         color.a = mix(color.a, min1(color.a + 0.28), waterFade * 0.55);
-        color.a = mix(color.a, min1(color.a + 0.16), seamFade * 0.78);
+        color.a = mix(color.a, min1(color.a + 0.16), seamFade * 0.65);
     }
 
     // Writing to: 0 (defined in voxy.json)
