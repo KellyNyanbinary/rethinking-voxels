@@ -162,8 +162,8 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     float directionalShade = mix(0.08, 1.0, pow(NdotL, 1.55));
     directionalShade *= mix(0.58, 1.0, shadowTime);
 
-    float ambient = mix(0.14, 0.62, skyLight) * mix(0.76, 1.08, upFacing);
-    float direct = (0.08 + 0.92 * sunVisibility) * (0.16 + 0.84 * skyLight) * directionalShade;
+    float ambient = mix(0.08, 0.48, skyLight) * mix(0.72, 1.02, upFacing);
+    float direct = (0.02 + 0.98 * sunVisibility) * (0.10 + 0.90 * skyLight) * directionalShade;
 
     // Extra contrast terms to make distant relief read as shadowed terrain.
     float sideShadow = pow(1.0 - NdotL, 1.8);
@@ -175,9 +175,15 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     direct *= 1.0 - 0.78 * pseudoShadow * (0.3 + 0.7 * sunVisibility);
     ambient *= 1.0 - 0.42 * pseudoShadow;
 
-    float torch = pow(blockLight, 1.2) * 0.5;
+    float nightDim = mix(0.52, 1.0, sunVisibility);
+    float dayTone = mix(0.86, 0.94, sunVisibility);
+    ambient *= nightDim;
+    direct *= mix(0.45, 1.0, sunVisibility);
 
-    color.rgb *= ambient + direct + torch;
+    float torch = pow(blockLight, 1.2) * 0.42;
+    float moonLift = 0.05 * nightFactor * skyLight;
+
+    color.rgb *= (ambient + direct + torch) * dayTone + moonLift;
     color.rgb += emission * 0.02;
     shadowMult = vec3(clamp(ambient + direct, 0.0, 1.0));
 
