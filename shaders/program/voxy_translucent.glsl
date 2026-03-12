@@ -217,10 +217,18 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         float waterFade = smoothstep(fadeStart, fadeEnd, lViewPos);
         waterFade = sqrt(waterFade);
 
+        // Extra blend focused around the renderer handoff distance to hide the hard line.
+        float seamCenter = renderDistance * 0.95;
+        float seamWidth = max(42.0, renderDistance * 0.24);
+        float seamFade = 1.0 - smoothstep(0.0, seamWidth, abs(lViewPos - seamCenter));
+
         vec3 baseWater = colorP.rgb * glColor.rgb;
         color.rgb = mix(color.rgb, baseWater, waterFade * 0.82);
         color.rgb = mix(color.rgb, fogColor, waterFade * 0.48);
+        vec3 seamTarget = mix(baseWater, skyColor * 0.8 + baseWater * 0.4, 0.6);
+        color.rgb = mix(color.rgb, seamTarget, seamFade * 0.72);
         color.a = mix(color.a, min1(color.a + 0.28), waterFade * 0.55);
+        color.a = mix(color.a, min1(color.a + 0.16), seamFade * 0.65);
     }
 
     // Writing to: 0 (defined in voxy.json)

@@ -175,22 +175,6 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     direct *= 1.0 - 0.78 * pseudoShadow * (0.3 + 0.7 * sunVisibility);
     ambient *= 1.0 - 0.42 * pseudoShadow;
 
-    #if SHADOW_QUALITY > -1 && (defined OVERWORLD || defined END)
-        // Minimal shadow-map probe for real cast silhouettes (e.g. trees) on distant terrain.
-        vec3 shadowPos = PlayerToShadow(playerPos + normalM * 0.02);
-        float distb = sqrt(shadowPos.x * shadowPos.x + shadowPos.y * shadowPos.y);
-        float distortFactor = distb * shadowMapBias + (1.0 - shadowMapBias);
-        shadowPos.xy /= distortFactor;
-        shadowPos.z *= 0.2;
-        shadowPos = shadowPos * 0.5 + 0.5;
-
-        float mapShadow = texture(shadowtex0, vec3(shadowPos.xy, shadowPos.z));
-        float castShadow = smoothstep(0.08, 0.88, mapShadow);
-        // Blend in with distance and sunlight so it does not look painted at night.
-        float castMix = smoothstep(36.0, 220.0, lViewPos) * (0.2 + 0.8 * sunVisibility);
-        direct *= mix(1.0, castShadow, castMix);
-    #endif
-
     float torch = pow(blockLight, 1.2) * 0.5;
 
     color.rgb *= ambient + direct + torch;
