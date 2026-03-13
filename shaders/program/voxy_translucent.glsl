@@ -150,10 +150,8 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     tbnMatrix = mat3(tangent.x, binormal.x, normal.x,
                      tangent.y, binormal.y, normal.y,
                      tangent.z, binormal.z, normal.z);
-    // Parallax control for distant Voxy water: damp XY while keeping a stable Z denominator.
+    // Match near-water path: use the same TBN-space view vector basis.
     viewVector = tbnMatrix * viewPos;
-    viewVector.xy *= 0.25;
-    viewVector.z = sign(viewVector.z) * max(abs(viewVector.z), 0.35);
 
     float dither = Bayer64(gl_FragCoord.xy);
     #ifdef TAA
@@ -178,11 +176,11 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     vec3 normalM = VdotN > 0.0 ? -normal : normal; // Inverted water normal workaround parity.
     vec3 geoNormal = normalM;
     vec3 shadowMult = vec3(1.0);
-    vec3 worldGeoNormal = normalize(mat3(vxModelViewInv) * geoNormal);
+    vec3 worldGeoNormal = normalize(ViewToPlayer(geoNormal * 10000.0));
     float fresnel = clamp(1.0 + dot(normalM, nViewPos), 0.0, 1.0);
     float fresnelM = pow3(fresnel);
 
-    #include "/lib/materials/materialHandling/translucentMaterials_voxy.glsl"
+    #include "/lib/materials/materialHandling/translucentMaterials.glsl"
 
     DoLighting(color, shadowMult, playerPos, viewPos, lViewPos, geoNormal, normalM, dither,
                worldGeoNormal, lmCoordM, noSmoothLighting, noDirectionalShading, false,
@@ -209,27 +207,6 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         vec4 reflection = vec4(0.0);
     #endif
     ////
-
-    if (mat == 32000) {
-        // Smooth near/far water seam with an adaptive distance blend.
-        float fadeStart = max(24.0, renderDistance * 0.18);
-        float fadeEnd = max(fadeStart + 220.0, renderDistance * 1.15);
-        float waterFade = smoothstep(fadeStart, fadeEnd, lViewPos);
-        waterFade = sqrt(waterFade);
-
-        // Extra blend focused around the renderer handoff distance to hide the hard line.
-        float seamCenter = renderDistance * 0.95;
-        float seamWidth = max(42.0, renderDistance * 0.24);
-        float seamFade = 1.0 - smoothstep(0.0, seamWidth, abs(lViewPos - seamCenter));
-
-        vec3 baseWater = colorP.rgb * glColor.rgb;
-        color.rgb = mix(color.rgb, baseWater, waterFade * 0.82);
-        color.rgb = mix(color.rgb, fogColor, waterFade * 0.48);
-        vec3 seamTarget = mix(baseWater, skyColor * 0.8 + baseWater * 0.4, 0.6);
-        color.rgb = mix(color.rgb, seamTarget, seamFade * 0.72);
-        color.a = mix(color.a, min1(color.a + 0.28), waterFade * 0.55);
-        color.a = mix(color.a, min1(color.a + 0.16), seamFade * 0.65);
-    }
 
     // Writing to: 0 (defined in voxy.json)
     gbufferData0 = color;

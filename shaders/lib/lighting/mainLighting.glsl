@@ -46,7 +46,7 @@ vec3 fractCamPos = cameraPositionInt.y == -98257195 ? fract(cameraPosition) : ca
     #include "/lib/misc/pixelation.glsl"
 #endif
 
-#if defined VOXY_PROGRAM
+#if defined VOXY_PROGRAM && defined VOXY_OPAQUE
     // Voxy program passes can run with tighter sampler-state constraints.
     vec3 readIrradianceCache(vec3 vxPos, vec3 normal) { return vec3(0.0); }
     vec3 readSurfaceVoxelBlocklight(vec3 vxPos, vec3 normal) { return vec3(0.0); }
@@ -523,7 +523,7 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
         #if defined PER_PIXEL_LIGHT && !defined GBUFFERS_WATER
         }
     #endif
-    #if defined GI && !defined VOXY_PROGRAM
+    #if defined GI && !(defined VOXY_PROGRAM && defined VOXY_OPAQUE)
         #ifndef GBUFFERS_WATER
             vec3 giLighting = 1.8 * readIrradianceCache(vxPos, mat3(gbufferModelViewInverse) * normalM) * GI_STRENGTH * 0.5;
         #else
@@ -568,7 +568,7 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
     }
 
     // Combine Lighting
-    #ifndef VOXY_PROGRAM
+    #if !(defined VOXY_PROGRAM && defined VOXY_OPAQUE)
         blockLighting = mix(voxelBlockLighting, blockLighting, voxelFactor);
     #endif
     vec3 sceneLighting = lightColorM * shadowMult + ambientColorM * ambientMult;

@@ -43,7 +43,7 @@ if (mat < 32008) {
                     smoothnessG = color.r * 0.7;
                     highlightMult = 2.5;
                 } else /*if (mat == 30020)*/ { // Nether Portal
-                    #ifdef SPECIAL_PORTAL_EFFECTS
+                    #if defined(SPECIAL_PORTAL_EFFECTS) && !defined(VOXY_PROGRAM)
                         #include "/lib/materials/specificMaterials/translucents/netherPortal.glsl"
                     #endif
                 }

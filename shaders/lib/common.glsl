@@ -685,8 +685,10 @@
         // Disable optional texture-heavy paths in this context to avoid runtime texture usage faults.
         #undef PER_PIXEL_LIGHT
         #undef VOXEL_RT_REFLECTIONS
-        #undef INTERACTIVE_WATER
-        #undef DISTANT_LIGHT_BOKEH
+        #if !defined VOXY_PROGRAM
+            #undef INTERACTIVE_WATER
+            #undef DISTANT_LIGHT_BOKEH
+        #endif
     #endif
 
 
