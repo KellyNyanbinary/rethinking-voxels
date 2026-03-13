@@ -680,8 +680,8 @@
         #endif
     #endif
 
-    #if defined VOXY_PATCH && !defined VOXY_PROGRAM
-        // External Voxy patch programs can have stricter sampler binding limits/state.
+    #if defined VOXY_PATCH
+        // Voxy patch programs can have stricter sampler binding limits/state.
         // Disable optional texture-heavy paths in this context to avoid runtime texture usage faults.
         #undef PER_PIXEL_LIGHT
         #undef VOXEL_RT_REFLECTIONS
