@@ -81,7 +81,7 @@ mat3 tbnMatrix;
             #include "/lib/atmospherics/auroraBorealis.glsl"
         #endif
 
-        #if NIGHT_NEBULAE == 1
+        #ifdef NIGHT_NEBULA
             #include "/lib/atmospherics/nightNebula.glsl"
         #else
             #include "/lib/atmospherics/stars.glsl"

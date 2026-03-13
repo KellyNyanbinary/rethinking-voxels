@@ -31,7 +31,7 @@ void AddBackgroundReflection(inout vec4 reflection, vec3 color, vec3 playerPos, 
                         auroraBorealis = GetAuroraBorealis(nViewPosR, RVdotU, dither);
                         skyReflection += auroraBorealis;
                     #endif
-                    #if NIGHT_NEBULAE == 1
+                    #ifdef NIGHT_NEBULA
                         nightNebula += GetNightNebula(nViewPosR, RVdotU, RVdotS);
                         skyReflection += nightNebula;
                     #endif
