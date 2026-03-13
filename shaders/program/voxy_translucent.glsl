@@ -150,8 +150,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     tbnMatrix = mat3(tangent.x, binormal.x, normal.x,
                      tangent.y, binormal.y, normal.y,
                      tangent.z, binormal.z, normal.z);
-    // Match near-water path: use the same TBN-space view vector basis.
-    viewVector = tbnMatrix * viewPos;
+    viewVector = vec3(playerPos.x, playerPos.z, 0);
 
     float dither = Bayer64(gl_FragCoord.xy);
     #ifdef TAA
@@ -173,10 +172,8 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     bool noSmoothLighting = false, noDirectionalShading = false, translucentMultCalculated = false, noGeneratedNormals = false;
     int subsurfaceMode = 0;
     float smoothnessG = 0.0, highlightMult = 1.0, reflectMult = 0.0, emission = 0.0;
-    vec3 normalM = VdotN > 0.0 ? -normal : normal; // Inverted water normal workaround parity.
-    vec3 geoNormal = normalM;
-    vec3 shadowMult = vec3(1.0);
-    vec3 worldGeoNormal = normalize(ViewToPlayer(geoNormal * 10000.0));
+    vec3 geoNormal = normal, normalM = normal, shadowMult = vec3(1.0);
+    vec3 worldGeoNormal = normalize(mat3(vxModelViewInv) * normal);
     float fresnel = clamp(1.0 + dot(normalM, nViewPos), 0.0, 1.0);
     float fresnelM = pow3(fresnel);
 
@@ -187,10 +184,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
                false, subsurfaceMode, smoothnessG, materialMask, highlightMult, emission);
 
     // Reflections
-    float skyLightFactor = pow2(max(lmCoordM.y - 0.7, 0.0) * 3.33333);
-    #if SHADOW_QUALITY > -1 && WATER_REFLECT_QUALITY >= 2 && WATER_MAT_QUALITY >= 2
-        skyLightFactor = max(skyLightFactor, min1(dot(shadowMult, shadowMult)));
-    #endif
+    float skyLightFactor = GetSkyLightFactor(lmCoordM, shadowMult);
     #if WATER_REFLECT_QUALITY >= 0
         #ifdef LIGHT_COLOR_MULTS
             highlightColor *= lightColorMult;
@@ -199,7 +193,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
             highlightColor *= pow2(moonPhaseInfluence);
         #endif
 
-        fresnelM = (fresnelM * 0.90 + 0.22) * reflectMult;
+        fresnelM = (fresnelM * 0.85 + 0.15) * reflectMult;
 
         vec4 reflection = GetReflection(normalM, viewPos.xyz, nViewPos, playerPos, lViewPos, -1.0,
                                         vxDepthTexOpaque, dither, skyLightFactor, fresnel,
@@ -210,12 +204,6 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         vec4 reflection = vec4(0.0);
     #endif
     ////
-
-    // Match near-water post processing so distant Voxy water attenuates similarly.
-    float sky = 0.0;
-    DoFog(color.rgb, sky, lViewPos, playerPos, VdotU, VdotS, dither);
-    color.a *= 1.0 - sky;
-
     // Writing to: 0 (defined in voxy.json)
     gbufferData0 = color;
 }
