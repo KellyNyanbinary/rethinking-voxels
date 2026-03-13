@@ -71,7 +71,7 @@ vec4 GetReflection(vec3 normalM, vec3 viewPos, vec3 nViewPos, vec3 playerPos, fl
     #endif
 
     vec4 reflection = vec4(0.0);
-    #if (defined COMPOSITE || WATER_REFLECT_QUALITY >= 1) && (WORLD_SPACE_REFLECTIONS_INTERNAL == -1 || WORLD_SPACE_REF_MODE == 2)
+    #if (defined COMPOSITE || WATER_REFLECT_QUALITY >= 1) && (WORLD_SPACE_REFLECTIONS_INTERNAL == -1 || WORLD_SPACE_REF_MODE == 2 || !defined(COMPOSITE))
         // Method 1: Ray Marched Reflection //
         #if defined COMPOSITE || WATER_REFLECT_QUALITY >= 2
             // Ray Marching
@@ -188,12 +188,14 @@ vec4 GetReflection(vec3 normalM, vec3 viewPos, vec3 nViewPos, vec3 playerPos, fl
                     #endif
 
                     #if defined GBUFFERS_WATER || defined DH_WATER || defined VOXY_PATCH
-                        #ifndef VOXY_PATCH
-                            reflection = vec4(texture2D(gaux2, refPos.xy).rgb, 1.0);
-                        #else
+                        #if defined VOXY_PATCH
                             reflection = vec4(texture2D(colortex19, refPos.xy).rgb, 1.0);
+                            reflection.rgb = pow2(reflection.rgb * 2.0);
+                        #else
+                            // Use explicit deferred reflection buffer to avoid legacy alias mapping ambiguity.
+                            reflection = vec4(texture2D(colortex5, refPos.xy).rgb, 1.0);
+                            reflection.rgb = pow2(reflection.rgb * 2.0);
                         #endif
-                        reflection.rgb = pow2(reflection.rgb * 2.0);
                     #else
                         float smoothnessDM = pow2(smoothness);
                         float lodFactor = 1.0 - exp(-0.125 * (1.0 - smoothnessDM) * dist);
@@ -208,7 +210,7 @@ vec4 GetReflection(vec3 normalM, vec3 viewPos, vec3 nViewPos, vec3 playerPos, fl
 
                     #if defined GBUFFERS_WATER || defined DH_WATER || defined VOXY_PATCH
                         float reflectionPrevAlpha = reflection.a;
-                        DoFog(reflection, skyFade, lViewPosRT, ViewToPlayer(rfragpos.xyz), RVdotU, RVdotS, dither, true, lViewPos);
+                        DoFog(reflection.rgb, skyFade, lViewPosRT, ViewToPlayer(rfragpos.xyz), RVdotU, RVdotS, dither);
                         reflection.a = reflectionPrevAlpha;
                         //reflection.a *= 1.0 - skyFade;
                     #endif
@@ -259,7 +261,7 @@ vec4 GetReflection(vec3 normalM, vec3 viewPos, vec3 nViewPos, vec3 playerPos, fl
                 #endif
 
                 if (z1R < 0.9997 && lViewPos <= 2.0 + lViewPosR) {
-                    reflection.rgb = texture2D(gaux2, screenPosR.xy).rgb;
+                    reflection.rgb = texture2D(colortex5, screenPosR.xy).rgb;
                     reflection.rgb = pow2(reflection.rgb * 2.0);
 
                     edgeFactor = 1.0 - edgeFactor;

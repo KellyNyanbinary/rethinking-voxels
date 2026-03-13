@@ -389,11 +389,7 @@ void main() {
             DoWorldOutline(color, linearZ0);
         #endif
 
-        #ifndef SKY_EFFECT_REFLECTION
-            waterRefColor = sqrt(color) - 1.0;
-        #else
-            waterRefColor = color;
-        #endif
+        waterRefColor = color;
 
         DoFog(color, skyFade, lViewPos, playerPos, VdotU, VdotS, dither);
     } else { // Sky
@@ -406,11 +402,7 @@ void main() {
                 lViewPos = length(viewPosDH.xyz);
                 playerPos = ViewToPlayer(viewPosDH.xyz);
                 
-                #ifndef SKY_EFFECT_REFLECTION
-                    waterRefColor = sqrt(color) - 1.0;
-                #else
-                    waterRefColor = color;
-                #endif
+                waterRefColor = color;
                 
                 DoFog(color.rgb, skyFade, lViewPos, playerPos, VdotU, VdotS, dither);
             } else { // Start of Actual Sky
@@ -466,8 +458,8 @@ void main() {
 
     #ifdef SKY_EFFECT_REFLECTION
         waterRefColor = mix(waterRefColor, clouds.rgb, clouds.a);
-        waterRefColor = sqrt(waterRefColor) - 1.0;
     #endif
+    waterRefColor = sqrt(waterRefColor) * 0.5;
 
     #if defined LIGHTSHAFTS_ACTIVE && (LIGHTSHAFT_BEHAVIOUR == 1 && SHADOW_QUALITY >= 1 || defined END)
         if (viewWidth + viewHeight - gl_FragCoord.x - gl_FragCoord.y < 1.5)
@@ -493,7 +485,7 @@ void main() {
 
     /*RENDERTARGETS:0,5,4,8*/
     gl_FragData[0] = vec4(color, 1.0);
-    gl_FragData[1] = vec4(waterRefColor, 1.0 - skyFade);
+    gl_FragData[1] = vec4(waterRefColor, cloudLinearDepth);
     gl_FragData[2] = vec4(cloudLinearDepth, texture5 * 0.5 + 0.5);
     gl_FragData[3] = vec4(smoothnessD, materialMaskInt / 255.0, 0, 1);
     #ifdef TEMPORAL_FILTER
