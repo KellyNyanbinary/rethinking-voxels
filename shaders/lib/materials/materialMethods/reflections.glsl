@@ -26,17 +26,6 @@ vec3 nvec3(vec4 pos) {
 
 vec3 refPos = vec3(0.0);
 
-#ifndef WATER_REFLECT_DISTANCE_MULT
-    #define WATER_REFLECT_DISTANCE_MULT 1.8
-#endif
-#ifndef WATER_REFLECT_DISTANCE_BONUS
-    #define WATER_REFLECT_DISTANCE_BONUS 24.0
-#endif
-
-#ifndef VOXY_REFLECT_SAMPLE_GAIN
-    #define VOXY_REFLECT_SAMPLE_GAIN 1.35
-#endif
-
 vec4 GetReflection(vec3 normalM, vec3 viewPos, vec3 nViewPos, vec3 playerPos, float lViewPos, float z0,
                    sampler2D depthtex, float dither, float skyLightFactor, float fresnel,
                    float smoothness, vec3 geoNormal, vec3 color, vec3 shadowMult, float highlightMult) {
@@ -128,7 +117,7 @@ vec4 GetReflection(vec3 normalM, vec3 viewPos, vec3 nViewPos, vec3 playerPos, fl
 
                 float lViewPosRT = length(rfragpos);
 
-                #if defined VOXY_PROGRAM && defined VOXY_TRANSLUCENT
+                #if defined VOXY_PATCH
                     if (refPos.x > 0.0 && refPos.x < 1.0 && refPos.y > 0.0 && refPos.y < 1.0) {
                         // Voxy translucent water renders before deferred; reprojection keeps reflections stable.
                         vec4 viewPosPrev = vxProjInv * vec4(refPos * 2.0 - 1.0, 1.0);
@@ -158,12 +147,12 @@ vec4 GetReflection(vec3 normalM, vec3 viewPos, vec3 nViewPos, vec3 playerPos, fl
 
                         reflection.rgb = texture2DLod(colortex0, refPos.xy, lod).rgb;
                     #else
-                        #if !(defined VOXY_PROGRAM && defined VOXY_TRANSLUCENT)
+                        #if !defined VOXY_PATCH
                             reflection = texture2D(gaux2, refPos.xy);
                             reflection.rgb = pow2(reflection.rgb + 1.0);
                         #else
                             reflection = vec4(texture2D(colortex19, refPos.xy).rgb, 1.0);
-                            reflection.rgb = pow2(reflection.rgb * VOXY_REFLECT_SAMPLE_GAIN);
+                            reflection.rgb = pow2(reflection.rgb * 2.0);
                         #endif
                     #endif
 
@@ -204,14 +193,13 @@ vec4 GetReflection(vec3 normalM, vec3 viewPos, vec3 nViewPos, vec3 playerPos, fl
 
                 screenPosR.z = texture2D(depthtex1, screenPosR.xy).x;
                 vec3 viewPosR = ScreenToView(screenPosR);
-                float reflectReach = 2.0 + length(viewPosR) * WATER_REFLECT_DISTANCE_MULT + WATER_REFLECT_DISTANCE_BONUS;
-                if (lViewPos <= reflectReach) {
-                    #if !(defined VOXY_PROGRAM && defined VOXY_TRANSLUCENT)
+                if (lViewPos <= 2.0 + length(viewPosR)) {
+                    #if !defined VOXY_PATCH
                         reflection = texture2D(gaux2, screenPosR.xy);
                         reflection.rgb = pow2(reflection.rgb + 1.0);
                     #else
                         reflection = vec4(texture2D(colortex19, screenPosR.xy).rgb, 1.0);
-                        reflection.rgb = pow2(reflection.rgb * VOXY_REFLECT_SAMPLE_GAIN);
+                        reflection.rgb = pow2(reflection.rgb * 2.0);
                     #endif
                 }
 
