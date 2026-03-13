@@ -234,7 +234,7 @@ void main() {
             highlightColor *= pow2(moonPhaseInfluence);
         #endif
 
-        float fresnelM = (pow3(fresnel) * 0.85 + 0.15) * reflectMult;
+        float fresnelM = (pow3(fresnel) * 0.90 + 0.22) * reflectMult;
 
         float skyLightFactor = pow2(max(lmCoordM.y - 0.7, 0.0) * 3.33333);
         #if SHADOW_QUALITY > -1 && WATER_REFLECT_QUALITY >= 2 && WATER_MAT_QUALITY >= 2

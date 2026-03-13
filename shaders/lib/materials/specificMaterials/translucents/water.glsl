@@ -1,7 +1,14 @@
 // ============================== Step 1: Color Prep ============================== //
 #ifndef WATER_PARITY_DEBUG
     // 0: off, 1: reflect/highlight/fog, 2: depth-diff/fog/fresnel
-    #define WATER_PARITY_DEBUG 1
+    #define WATER_PARITY_DEBUG 0
+#endif
+
+#ifndef WATER_REFLECT_GAIN
+    #define WATER_REFLECT_GAIN 1.35
+#endif
+#ifndef WATER_REFLECT_MIN
+    #define WATER_REFLECT_MIN 0.12
 #endif
 
 #if defined VOXY_PATCH && !defined VOXY_PROGRAM
@@ -339,7 +346,9 @@
     // ============================== End of Step 3 ============================== //
 
     // ============================== Step 4: Final Tweaks ============================== //
-    reflectMult *= 0.5 + 0.5 * NdotUmax0;
+    reflectMult = max(reflectMult, WATER_REFLECT_MIN);
+    reflectMult *= WATER_REFLECT_GAIN * (0.5 + 0.5 * NdotUmax0);
+    reflectMult = min1(reflectMult);
 
     color.a = mix(color.a, 1.0, fresnel4);
 
