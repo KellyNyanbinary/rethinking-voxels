@@ -70,6 +70,7 @@ void DoFoliageColorTweaks(inout vec3 color, inout vec3 shadowMult, inout float s
 //Includes//
 #include "/lib/util/spaceConversion.glsl"
 #include "/lib/util/dither.glsl"
+#include "/lib/lighting/mainLighting.glsl"
 #include "/lib/atmospherics/fog/mainFog.glsl"
 
 #ifdef ATM_COLOR_MULTS
@@ -151,42 +152,9 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
                      playerPos, lmCoord, snowFactor, snowMinNdotU, NdotU, subsurfaceMode);
     #endif
 
-    // Sampler-safe lighting to keep Voxy opaque runtime stable.
-    vec3 litNormal = normalize(normalM);
-    float skyLight = clamp(lmCoordM.y, 0.0, 1.0);
-    float blockLight = clamp(lmCoordM.x, 0.0, 1.0);
-
-    float NdotL = max0(dot(litNormal, lightVec));
-    float upFacing = clamp(dot(litNormal, upVec) * 0.5 + 0.5, 0.0, 1.0);
-
-    // Directional darkening acts as a lightweight stand-in for distant cast shadows.
-    float directionalShade = mix(0.08, 1.0, pow(NdotL, 1.55));
-    directionalShade *= mix(0.58, 1.0, shadowTime);
-
-    float ambient = mix(0.08, 0.48, skyLight) * mix(0.72, 1.02, upFacing);
-    float direct = (0.02 + 0.98 * sunVisibility) * (0.10 + 0.90 * skyLight) * directionalShade;
-
-    // Extra contrast terms to make distant relief read as shadowed terrain.
-    float sideShadow = pow(1.0 - NdotL, 1.8);
-    float valleyShadow = pow(1.0 - upFacing, 1.7);
-    float farShadowBoost = smoothstep(48.0, 220.0, lViewPos);
-    float pseudoShadow = clamp(sideShadow * 0.75 + valleyShadow * 0.55, 0.0, 1.0);
-    pseudoShadow *= mix(0.35, 0.95, farShadowBoost) * (0.25 + 0.75 * skyLight);
-
-    direct *= 1.0 - 0.78 * pseudoShadow * (0.3 + 0.7 * sunVisibility);
-    ambient *= 1.0 - 0.42 * pseudoShadow;
-
-    float nightDim = mix(0.52, 1.0, sunVisibility);
-    float dayTone = mix(0.86, 0.94, sunVisibility);
-    ambient *= nightDim;
-    direct *= mix(0.45, 1.0, sunVisibility);
-
-    float torch = pow(blockLight, 1.2) * 0.42;
-    float moonLift = 0.05 * nightFactor * skyLight;
-
-    color.rgb *= (ambient + direct + torch) * dayTone + moonLift;
-    color.rgb += emission * 0.02;
-    shadowMult = vec3(clamp(ambient + direct, 0.0, 1.0));
+    DoLighting(color, shadowMult, playerPos, viewPos, lViewPos, geoNormal, normalM, dither,
+               worldGeoNormal, lmCoordM, noSmoothLighting, noDirectionalShading, noVanillaAO,
+               centerShadowBias, subsurfaceMode, smoothnessG, materialMask, highlightMult, emission);
 
     float skyFade = 0.0;
     float VdotU = dot(nViewPos, upVec);
