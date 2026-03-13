@@ -1,4 +1,9 @@
 // ============================== Step 1: Color Prep ============================== //
+#ifndef WATER_PARITY_DEBUG
+    // 0: off, 1: reflect/highlight/fog, 2: depth-diff/fog/fresnel
+    #define WATER_PARITY_DEBUG 1
+#endif
+
 #if defined VOXY_PATCH && !defined VOXY_PROGRAM
     // External Voxy patch shaders may not expose interactive-water textures.
     #undef INTERACTIVE_WATER
@@ -57,6 +62,9 @@
 
 #if defined GBUFFERS_WATER || defined DH_WATER || defined VOXY_PATCH
     lmCoordM.y = min(lmCoord.y * 1.07, 1.0); // Iris/Sodium skylight inconsistency workaround
+
+    float waterDebugFog = 0.0;
+    float waterDebugDepthDiff = 0.0;
     
     float fresnel2 = pow2(fresnel);
     float fresnel4 = pow2(fresnel2);
@@ -237,6 +245,7 @@
                 lViewPosT = min(lViewPosT, length(viewPosLod));
             #endif
             float lViewPosDifM = lViewPos - lViewPosT;
+            waterDebugDepthDiff = lViewPosDifM;
 
             #if WATER_STYLE < 3
                 color.a = sqrt1(color.a);
@@ -254,6 +263,7 @@
             #endif
 
             float waterFog = max0(1.0 - exp(lViewPosDifM * 0.075));
+            waterDebugFog = waterFog;
             color.a *= 0.25 + 0.75 * waterFog;
 
             #if defined BRIGHT_CAVE_WATER && WATER_ALPHA_MULT < 200
@@ -359,5 +369,27 @@
             highlightMult *= (16.0 - 15.0 * fresnel2) * (sunVisibility > 0.5 ? 0.85 : 0.425);
         #endif
     #endif
+
+    #if WATER_PARITY_DEBUG == 1
+        float reflectViz = 1.0 - exp(-2.0 * max(reflectMult, 0.0));
+        float highlightViz = 1.0 - exp(-6.0 * max(highlightMult, 0.0));
+        float fogViz = 1.0 - exp(-4.0 * max(waterDebugFog, 0.0));
+
+        #if defined VOXY_PATCH
+            vec3 passViz = vec3(0.0, 0.0, 0.12); // Voxy marker tint
+        #elif defined GBUFFERS_WATER
+            vec3 passViz = vec3(0.0, 0.12, 0.0); // Near-water marker tint
+        #else
+            vec3 passViz = vec3(0.0);
+        #endif
+
+        color.rgb = min(vec3(1.0), vec3(reflectViz, highlightViz, fogViz) + passViz);
+        color.a = 1.0;
+    #elif WATER_PARITY_DEBUG == 2
+        float depthDiffViz = clamp(abs(waterDebugDepthDiff) * 0.02, 0.0, 1.0);
+        color.rgb = vec3(depthDiffViz, clamp(waterDebugFog, 0.0, 1.0), clamp(fresnel, 0.0, 1.0));
+        color.a = 1.0;
+    #endif
+
     // ============================== End of Step 4 ============================== //
 #endif
