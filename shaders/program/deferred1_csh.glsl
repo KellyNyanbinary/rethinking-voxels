@@ -39,11 +39,14 @@ vec2 view = vec2(viewWidth, viewHeight);
 
 #include "/lib/atmospherics/fog/mainFog.glsl"
 #include "/lib/colors/skyColors.glsl"
+// mainClouds.glsl depends on PlayerToShadow from spaceConversion, so this include must
+// stay above the optional sky-effect helpers in the compute variant.
 #include "/lib/util/spaceConversion.glsl"
 #if AURORA_STYLE > 0
     #include "/lib/atmospherics/auroraBorealis.glsl"
 #endif
 #if defined(OVERWORLD) && !defined(NIGHT_NEBULA)
+    // nightNebula.glsl already pulls in stars.glsl; avoid duplicate helper defs here.
     #include "/lib/atmospherics/stars.glsl"
 #endif
 #ifdef NIGHT_NEBULA
@@ -81,6 +84,8 @@ void main() {
         #endif
 
         vec3 texture5 = texelFetch(colortex5, coord, 0).rgb;
+        // Keep a stable geometric normal for ray-hit validation. The perturbed normal
+        // below is only for roughness/noise so we do not bias toward sky fallback.
         vec3 geoNormal = normalize(mat3(gbufferModelView) * texture5);
         vec3 normalM = geoNormal;
         vec3 sceneColor = texelFetch(colortex0, coord, 0).rgb;

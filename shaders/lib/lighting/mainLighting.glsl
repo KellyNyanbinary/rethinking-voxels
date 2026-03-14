@@ -13,6 +13,7 @@ vec3 fractCamPos = cameraPositionInt.y == -98257195 ? fract(cameraPosition) : ca
 
 //Lighting Includes//
 #include "/lib/colors/lightAndAmbientColors.glsl"
+// Main lighting still expects GGX to see the geometric surface normal the old way.
 #define GGX_GEOMETRIC_NORMAL normal
 #include "/lib/lighting/ggx.glsl"
 #undef GGX_GEOMETRIC_NORMAL

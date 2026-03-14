@@ -54,6 +54,9 @@ float GGX(vec3 normalM, vec3 viewPos, vec3 lightVec, float NdotLmax0, float smoo
     float D = roughness / (3.141592653589793 * pow2(denom));
     float f0 = 0.05;
     float F = exp2((-5.55473 * dotLH - 6.98316) * dotLH) * (1.0 - f0) + f0;
+    // Some shared users of GGX, such as deferred reflection helpers, do not have a
+    // global `normal` symbol in scope. Callers that need the legacy geometric-normal
+    // weighting opt in explicitly with GGX_GEOMETRIC_NORMAL.
     #if defined(GGX_GEOMETRIC_NORMAL)
         float NdotLmax0M = sqrt3(NdotLmax0 * max0(dot(GGX_GEOMETRIC_NORMAL, lightVec)));
     #else

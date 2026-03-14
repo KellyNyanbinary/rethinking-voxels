@@ -51,6 +51,42 @@ The following were aligned to reduce near-water reflection color issues:
 2. Nearby-water reflection sampling in `reflections.glsl`:
     - switched from alias-based reads to explicit reflection buffer reads (`colortex5`) to avoid alias ambiguity (`gaux2` mapping differences).
 
+## Current HEAD vs Base RV (`origin/main..HEAD`)
+
+The current delta against base Rethinking Voxels is intentionally small and limited to four files.
+
+1. `shaders/lib/materials/materialMethods/reflectionBackground.glsl`
+    - Restores Unbound-style deferred background reflection branching by removing the local `DEFERRED1 == COMPOSITE` treatment.
+    - Keeps the reflection highlight-color derivation local because this helper now compiles in passes that do not include `mainLighting.glsl`.
+    - This is the main behavioral change that reduced the residual blue sky bias on reflective solids.
+
+2. `shaders/program/deferred1_csh.glsl`
+    - Mirrors the deferred fragment path's light and sky-effect context so the shared reflection helper compiles in compute as well.
+    - Passes a stable geometric normal plus scene color into `GetReflection(...)` instead of zero vectors.
+    - Uses a separate roughness-perturbed normal for shading only, so reflection hit validation does not collapse into sky/background fallback.
+    - Includes `spaceConversion.glsl` before `mainClouds.glsl` and avoids double-including `stars.glsl` when `NIGHT_NEBULA` is active.
+
+3. `shaders/lib/lighting/ggx.glsl`
+    - Adds an include guard because the file is now reachable from more than one include path.
+    - Replaces the implicit dependency on a global `normal` variable with an opt-in `GGX_GEOMETRIC_NORMAL` hook.
+    - This is a compatibility shim, not a visual change by itself.
+
+4. `shaders/lib/lighting/mainLighting.glsl`
+    - Opts into the new `GGX_GEOMETRIC_NORMAL` hook to preserve the original geometric-normal weighting in the main lighting path.
+    - This keeps the GGX helper backward-compatible while allowing deferred reflection code to include it safely.
+
+## Why These Shims Exist
+
+1. RV and Unbound do not share the same program graph.
+    - Unbound's reflection helpers assume certain symbols and include order are already present in the calling shader.
+    - RV's deferred compute path (`deferred1_csh`) did not provide that same context.
+
+2. Shared helpers are now compiled in more places than base RV expected.
+    - That exposed hidden assumptions such as global `normal`, `highlightColor`, star-helper include order, and cloud-helper dependencies on `PlayerToShadow`.
+
+3. The comments added in code mark compatibility boundaries, not long-term architecture goals.
+    - If this subsystem is cleaned up later, these are the places to revisit and remove once the reflection stack is structurally unified.
+
 ## Recommended Porting Strategy (RV Features on Top of Complementary)
 
 1. Treat RV buffer layout as source-of-truth.

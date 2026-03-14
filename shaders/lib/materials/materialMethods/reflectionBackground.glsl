@@ -1,6 +1,8 @@
 #include "/lib/colors/lightAndAmbientColors.glsl"
 #include "/lib/lighting/ggx.glsl"
 
+// Reflection background can compile in deferred paths without mainLighting.glsl, so
+// keep the highlight color derivation local instead of relying on a global symbol.
 vec3 GetReflectionHighlightColor() {
     return normalize(pow(lightColor, vec3(0.37))) * (0.3 + 1.5 * sunVisibility2) * (1.0 - 0.85 * rainFactor);
 }
@@ -21,6 +23,8 @@ void AddBackgroundReflection(inout vec4 reflection, vec3 color, vec3 playerPos, 
             skyReflection *= moonPhaseInfluence;
         #endif
 
+        // DEFERRED1 should follow Unbound's non-COMPOSITE branch here; treating it as
+        // COMPOSITE over-weights pure sky color and pushes neutral reflections blue.
         #ifdef COMPOSITE
             skyReflection *= skyLightFactor;
         #else
@@ -65,6 +69,8 @@ void AddBackgroundReflection(inout vec4 reflection, vec3 color, vec3 playerPos, 
             #endif
         #endif
     #elif defined END
+        // Same rationale as the Overworld branch above: deferred reflections should use
+        // the material-aware path instead of the COMPOSITE sky-only weighting.
         #ifdef COMPOSITE
             vec3 skyReflection = (endSkyColor + 0.4 * DrawEnderBeams(RVdotU, playerPos, nViewPosR)) * skyLightFactor;
         #else
