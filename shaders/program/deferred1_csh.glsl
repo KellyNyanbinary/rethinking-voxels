@@ -27,6 +27,12 @@ float shadowTimeVar1 = abs(sunVisibility - 0.5) * 2.0;
 float shadowTimeVar2 = shadowTimeVar1 * shadowTimeVar1;
 float shadowTime = shadowTimeVar2 * shadowTimeVar2;
 
+#ifdef OVERWORLD
+vec3 lightVec = sunVec * ((timeAngle < 0.5325 || timeAngle > 0.9675) ? 1.0 : -1.0);
+#else
+vec3 lightVec = sunVec;
+#endif
+
 float vlFactor = 0.0;
 
 vec2 view = vec2(viewWidth, viewHeight);
@@ -34,6 +40,24 @@ vec2 view = vec2(viewWidth, viewHeight);
 #include "/lib/atmospherics/fog/mainFog.glsl"
 #include "/lib/colors/skyColors.glsl"
 #include "/lib/util/spaceConversion.glsl"
+#if AURORA_STYLE > 0
+    #include "/lib/atmospherics/auroraBorealis.glsl"
+#endif
+#if defined(OVERWORLD) && !defined(NIGHT_NEBULA)
+    #include "/lib/atmospherics/stars.glsl"
+#endif
+#ifdef NIGHT_NEBULA
+    #include "/lib/atmospherics/nightNebula.glsl"
+#endif
+#ifdef VL_CLOUDS_ACTIVE
+    #include "/lib/atmospherics/clouds/mainClouds.glsl"
+#endif
+#ifdef ATM_COLOR_MULTS
+    #include "/lib/colors/colorMultipliers.glsl"
+#endif
+#ifdef MOON_PHASE_INF_ATMOSPHERE
+    #include "/lib/colors/moonPhaseInfluence.glsl"
+#endif
 #include "/lib/materials/materialMethods/reflections.glsl"
 
 layout(rgba16f) uniform image2D colorimg10;

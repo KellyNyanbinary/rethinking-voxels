@@ -1,3 +1,10 @@
+#include "/lib/colors/lightAndAmbientColors.glsl"
+#include "/lib/lighting/ggx.glsl"
+
+vec3 GetReflectionHighlightColor() {
+    return normalize(pow(lightColor, vec3(0.37))) * (0.3 + 1.5 * sunVisibility2) * (1.0 - 0.85 * rainFactor);
+}
+
 void AddBackgroundReflection(inout vec4 reflection, vec3 color, vec3 playerPos, vec3 normalM, vec3 normalMR, vec3 nViewPos, vec3 nViewPosR,
                              vec3 shadowMult, float RVdotU, float RVdotS, float z0, float dither, float skyLightFactor, float smoothness, float highlightMult) {
     #ifdef OVERWORLD
@@ -14,11 +21,11 @@ void AddBackgroundReflection(inout vec4 reflection, vec3 color, vec3 playerPos, 
             skyReflection *= moonPhaseInfluence;
         #endif
 
-        #if defined(COMPOSITE) || defined(DEFERRED1)
+        #ifdef COMPOSITE
             skyReflection *= skyLightFactor;
         #else
             float specularHighlight = GGX(normalM, nViewPos, lightVec, max(dot(normalM, lightVec), 0.0), smoothness);
-            skyReflection += specularHighlight * highlightColor * shadowMult * highlightMult * invRainFactor;
+            skyReflection += specularHighlight * GetReflectionHighlightColor() * shadowMult * highlightMult * invRainFactor;
             
             #if WATER_REFLECT_QUALITY >= 1
                 #ifdef SKY_EFFECT_REFLECTION
@@ -58,7 +65,7 @@ void AddBackgroundReflection(inout vec4 reflection, vec3 color, vec3 playerPos, 
             #endif
         #endif
     #elif defined END
-        #if defined(COMPOSITE) || defined(DEFERRED1)
+        #ifdef COMPOSITE
             vec3 skyReflection = (endSkyColor + 0.4 * DrawEnderBeams(RVdotU, playerPos, nViewPosR)) * skyLightFactor;
         #else
             vec3 skyReflection = endSkyColor * shadowMult;

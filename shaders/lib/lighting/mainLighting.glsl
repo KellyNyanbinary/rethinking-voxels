@@ -13,7 +13,9 @@ vec3 fractCamPos = cameraPositionInt.y == -98257195 ? fract(cameraPosition) : ca
 
 //Lighting Includes//
 #include "/lib/colors/lightAndAmbientColors.glsl"
+#define GGX_GEOMETRIC_NORMAL normal
 #include "/lib/lighting/ggx.glsl"
+#undef GGX_GEOMETRIC_NORMAL
 
 #if SHADOW_QUALITY > -1 && (defined OVERWORLD || defined END)
     #include "/lib/lighting/shadowSampling.glsl"
