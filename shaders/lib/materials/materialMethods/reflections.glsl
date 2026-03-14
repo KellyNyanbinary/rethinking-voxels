@@ -5,7 +5,7 @@
 #ifdef OVERWORLD
     #include "/lib/atmospherics/sky.glsl"
 #endif
-#if defined END && defined COMPOSITE
+#if defined END && (defined COMPOSITE || defined DEFERRED1)
     #include "/lib/atmospherics/enderBeams.glsl"
 #endif
 

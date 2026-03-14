@@ -54,4 +54,9 @@
         return beams.rgb;
     }
 
+    // Compatibility overload used by some reflection paths.
+    vec3 DrawEnderBeams(float VdotU, vec3 playerPos, vec3 nViewPos) {
+        return DrawEnderBeams(VdotU, playerPos);
+    }
+
 #endif //INCLUDE_ENDER_BEAMS
