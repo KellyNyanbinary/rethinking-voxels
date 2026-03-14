@@ -57,7 +57,9 @@ void main() {
         #endif
 
         vec3 texture5 = texelFetch(colortex5, coord, 0).rgb;
-        vec3 normalM = mat3(gbufferModelView) * texture5;
+        vec3 geoNormal = normalize(mat3(gbufferModelView) * texture5);
+        vec3 normalM = geoNormal;
+        vec3 sceneColor = texelFetch(colortex0, coord, 0).rgb;
         float smoothnessD = 0.0;
         int materialMaskInt = 0;
 
@@ -115,11 +117,11 @@ void main() {
         roughNoise = fract(roughNoise + vec3(dither, dither * goldenRatio, dither * pow2(goldenRatio)));
         roughNoise = noiseMult * (roughNoise - vec3(0.5));
 
-        normalM += roughNoise;
+        normalM = normalize(normalM + roughNoise);
 
         vec4 reflection = GetReflection(normalM, viewPos.xyz, nViewPos, playerPos, lViewPos, z0,
-                                        depthtex0, dither, skyLightFactor, fresnel,
-                                        smoothnessD, vec3(0.0), vec3(0.0), vec3(0.0), 0.0);
+                        depthtex0, dither, skyLightFactor, fresnel,
+                smoothnessD, geoNormal, sceneColor, vec3(1.0), 1.0);
         if (any(isnan(reflection))) reflection = vec4(0);
         imageStore(
             colorimg10,
