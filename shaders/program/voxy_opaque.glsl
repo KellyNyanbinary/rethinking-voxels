@@ -70,7 +70,6 @@ void DoFoliageColorTweaks(inout vec3 color, inout vec3 shadowMult, inout float s
 //Includes//
 #include "/lib/util/spaceConversion.glsl"
 #include "/lib/util/dither.glsl"
-#include "/lib/atmospherics/fog/mainFog.glsl"
 
 #ifdef ATM_COLOR_MULTS
     #include "/lib/colors/colorMultipliers.glsl"
@@ -154,28 +153,6 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     DoLighting(color, shadowMult, playerPos, viewPos, lViewPos, geoNormal, normalM, dither,
                worldGeoNormal, lmCoordM, noSmoothLighting, noDirectionalShading, noVanillaAO,
                centerShadowBias, subsurfaceMode, smoothnessG, materialMask, highlightMult, emission);
-
-    float skyFade = 0.0;
-    float VdotU = dot(nViewPos, upVec);
-    float VdotS = dot(nViewPos, sunVec);
-
-    // Voxy patch depth can be normalized in some contexts, so rescale fog inputs when needed.
-    float fogDistance = lViewPos;
-    vec3 fogPlayerPos = playerPos;
-    if (fogDistance < 8.0) {
-        float voxyDistanceScale = max(renderDistance, far);
-        fogDistance *= voxyDistanceScale;
-        fogPlayerPos *= voxyDistanceScale;
-    }
-    // Start fog earlier, but keep the overall effect softer than heavy distance scaling.
-    const float voxyFogStartBias = 128.0;
-    const float voxyFogStrength = 1.0;
-    fogDistance = (fogDistance + voxyFogStartBias) * voxyFogStrength;
-    fogPlayerPos *= voxyFogStrength;
-
-    // Force fog to span full vertical height by minimizing altitude falloff.
-    fogPlayerPos.y = 0.0;
-    DoFog(color.rgb, skyFade, fogDistance, fogPlayerPos, VdotU, VdotS, dither);
 
     float skyLightFactor = GetSkyLightFactor(lmCoordM, shadowMult);
 

@@ -392,20 +392,28 @@ void main() {
         waterRefColor = color;
 
         DoFog(color, skyFade, lViewPos, playerPos, VdotU, VdotS, dither);
-    } else { // Sky
-        #ifdef DISTANT_HORIZONS
-            float z0DH = texelFetch(dhDepthTex, texelCoord, 0).r;
-            if (z0DH < 1.0) { // Distant Horizons Chunks
-                vec4 screenPosDH = vec4(texCoord, z0DH, 1.0);
-                vec4 viewPosDH = dhProjectionInverse * (screenPosDH * 2.0 - 1.0);
-                viewPosDH /= viewPosDH.w;
-                lViewPos = length(viewPosDH.xyz);
-                playerPos = ViewToPlayer(viewPosDH.xyz);
-                
+    } else {
+        #if defined DISTANT_HORIZONS || defined VOXY
+            #ifdef DISTANT_HORIZONS
+                float z0Lod = texelFetch(dhDepthTex, texelCoord, 0).r;
+            #elif defined VOXY
+                float z0Lod = texelFetch(vxDepthTexTrans, texelCoord, 0).r;
+            #endif
+            if (z0Lod < 1.0) {
+                vec4 screenPosLod = vec4(texCoord, z0Lod, 1.0);
+                #ifdef DISTANT_HORIZONS
+                    vec4 viewPosLod = dhProjectionInverse * (screenPosLod * 2.0 - 1.0);
+                #elif defined VOXY
+                    vec4 viewPosLod = vxProjInv * (screenPosLod * 2.0 - 1.0);
+                #endif
+                viewPosLod /= viewPosLod.w;
+                lViewPos = length(viewPosLod.xyz);
+                playerPos = ViewToPlayer(viewPosLod.xyz);
+
                 waterRefColor = color;
-                
+
                 DoFog(color.rgb, skyFade, lViewPos, playerPos, VdotU, VdotS, dither);
-            } else { // Start of Actual Sky
+            } else {
         #endif
 
         skyFade = 1.0;
@@ -437,8 +445,8 @@ void main() {
             #endif
         #endif
 
-        #ifdef DISTANT_HORIZONS
-        } // End of Actual Sky
+        #if defined DISTANT_HORIZONS || defined VOXY
+        }
         #endif
     }
 
