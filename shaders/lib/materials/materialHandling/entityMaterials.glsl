@@ -13,8 +13,13 @@ if (entityId < 50064) {
                     #include "/lib/materials/specificMaterials/entities/lightningBolt.glsl"
                 }
             } else {
-                if (entityId == 50008) { // Item Frame, Glow Item Frame
+                if (entityId == 50008) { // Item Frame
                     noSmoothLighting = true;
+                    noDirectionalShading = true;
+                } else if (entityId == 50010) { // Glow Item Frame
+                    noSmoothLighting = true;
+                    noDirectionalShading = true;
+                    lmCoordM.y = eyeBrightnessM;
                 } else /*if (entityId == 50012)*/ { // Iron Golem
                     #include "/lib/materials/specificMaterials/terrain/ironBlock.glsl"
 

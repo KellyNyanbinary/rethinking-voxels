@@ -159,8 +159,13 @@ void main() {
 
             if (entityId == 50004) { // Lightning Bolt
                 #include "/lib/materials/specificMaterials/entities/lightningBolt.glsl"
-            } else if (entityId == 50008) { // Item Frame, Glow Item Frame
+            } else if (entityId == 50008) { // Item Frame
                 noSmoothLighting = true;
+                noDirectionalShading = true;
+            } else if (entityId == 50010) { // Glow Item Frame
+                noSmoothLighting = true;
+                noDirectionalShading = true;
+                lmCoordM.y = eyeBrightnessM;
             } else if (entityId == 50076) { // Boats
                 playerPos.y += 0.38; // consistentBOAT2176
             }
