@@ -88,10 +88,6 @@ void DoFoliageColorTweaks(inout vec3 color, inout vec3 shadowMult, inout float s
     #include "/lib/materials/materialMethods/snowyWorld.glsl"
 #endif
 
-#ifdef DISTANT_LIGHT_BOKEH
-    #include "/lib/misc/distantLightBokeh.glsl"
-#endif
-
 //Program//
 void voxy_emitFragment(VoxyFragmentParameters parameters) {
     // Prepare
@@ -138,7 +134,6 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     bool noSmoothLighting = false, noDirectionalShading = false, noVanillaAO = false, centerShadowBias = false, noGeneratedNormals = false, doTileRandomisation = true;
     float smoothnessD = 0.0, materialMask = 0.0;
     float smoothnessG = 0.0, highlightMult = 1.0, emission = 0.0, noiseFactor = 1.0, snowFactor = 1.0, snowMinNdotU = 0.0, noPuddles = 0.0;
-    vec3 maRecolor = vec3(0.0);
     vec3 geoNormal = normal, normalM = normal, shadowMult = vec3(1.0);
     vec3 worldGeoNormal = normalize(mat3(vxModelViewInv) * normal);
 
@@ -149,8 +144,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     vec2 absMidCoordPos = vec2(999999999.0);
     vec2 texCoord = vec2(999999999.0);
 
-    #include "/lib/materials/materialHandling/terrainMaterials.glsl"
-    color.rgb += maRecolor;
+    #include "/lib/materials/materialHandling/terrainMaterials_voxy.glsl"
 
     #ifdef SNOWY_WORLD
         DoSnowyWorld(color, smoothnessG, highlightMult, smoothnessD, emission,

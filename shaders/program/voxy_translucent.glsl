@@ -156,7 +156,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     #ifdef TAA
         dither = fract(dither + goldenRatio * mod(float(frameCounter), 3600.0));
     #endif
-    
+
     #ifdef ATM_COLOR_MULTS
         atmColorMult = GetAtmColorMult();
         sqrtAtmColorMult = sqrt(atmColorMult);
