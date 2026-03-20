@@ -1,6 +1,13 @@
+// Default to neutral reflection tint so callers do not need to seed this include.
+reflectColor = vec3(1.0);
+
+#ifndef DEFERRED_MATERIAL_ENTITY_FLAG
+    #define DEFERRED_MATERIAL_ENTITY_FLAG entityOrHand
+#endif
+
 if (abs(materialMaskInt - 149.5) < 50.0) { // Entity Reflection Handling (see common.glsl for details)
     materialMaskInt -= 100;
-    entityOrHand = true;
+    DEFERRED_MATERIAL_ENTITY_FLAG = true;
 }
 
 if (materialMaskInt != 0) {
@@ -69,3 +76,5 @@ if (materialMaskInt != 0) {
         }
     }
 }
+
+#undef DEFERRED_MATERIAL_ENTITY_FLAG

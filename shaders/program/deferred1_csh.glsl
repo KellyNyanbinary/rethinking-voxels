@@ -99,8 +99,7 @@ void main() {
         smoothnessD = texture6.r;
 
         #ifdef IPBR
-            float ssao;
-            vec3 reflectColor;
+            vec3 reflectColor = vec3(1.0);
             #include "/lib/materials/materialHandling/deferredMaterials.glsl"
         #else
             if (materialMaskInt <= 240) {
