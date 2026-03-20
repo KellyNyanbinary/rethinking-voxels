@@ -167,7 +167,9 @@ if (mat < 11024) {
                                             smoothnessD = 1.0;
                                         #endif
 
-                                        #include "/lib/materials/specificMaterials/translucents/water.glsl"
+                                        #ifdef GBUFFERS_TERRAIN
+                                            #include "/lib/materials/specificMaterials/translucents/water.glsl"
+                                        #endif
 
                                         #ifdef COATED_TEXTURES
                                             noiseFactor = 0.0;
@@ -234,7 +236,7 @@ if (mat < 11024) {
                                         doTileRandomisation = false;
                                     #endif
 
-                                    #ifdef DISTANT_LIGHT_BOKEH
+                                    #if defined DISTANT_LIGHT_BOKEH && defined GBUFFERS_TERRAIN
                                         DoDistantLightBokehMaterial(emission, 4.5, lViewPos);
                                     #endif
                                 }
@@ -1077,7 +1079,7 @@ if (mat < 11024) {
                                     emission = max0(color.g - 0.3) * 4.6;
                                     color.rg += emission * vec2(0.15, 0.05);
 
-                                    #ifdef DISTANT_LIGHT_BOKEH
+                                    #if defined DISTANT_LIGHT_BOKEH && defined GBUFFERS_TERRAIN
                                         DoDistantLightBokehMaterial(emission, 2.0, lViewPos);
                                     #endif
                                 }
@@ -1181,7 +1183,7 @@ if (mat < 11024) {
 
                                     color.rb *= vec2(1.13, 1.1);
 
-                                    #ifdef DISTANT_LIGHT_BOKEH
+                                    #if defined DISTANT_LIGHT_BOKEH && defined GBUFFERS_TERRAIN
                                         DoDistantLightBokehMaterial(emission, 2.0, lViewPos);
                                     #endif
 
@@ -1351,7 +1353,7 @@ if (mat < 11024) {
                                         }
                                     #endif
 
-                                    #ifdef DISTANT_LIGHT_BOKEH
+                                    #if defined DISTANT_LIGHT_BOKEH && defined GBUFFERS_TERRAIN
                                         DoDistantLightBokehMaterial(color, vec4(1.0, 0.6, 0.2, 1.0), emission, 5.0, lViewPos);
                                     #endif
 
@@ -1387,7 +1389,7 @@ if (mat < 11024) {
                                         }
                                     #endif
 
-                                    #ifdef DISTANT_LIGHT_BOKEH
+                                    #if defined DISTANT_LIGHT_BOKEH && defined GBUFFERS_TERRAIN
                                         DoDistantLightBokehMaterial(emission, 4.0, lViewPos);
                                     #endif
                                 }
@@ -1463,7 +1465,7 @@ if (mat < 11024) {
                                     }
                                     emission += 0.0001; // No light reducing during noon
 
-                                    #ifdef DISTANT_LIGHT_BOKEH
+                                    #if defined DISTANT_LIGHT_BOKEH && defined GBUFFERS_TERRAIN
                                         DoDistantLightBokehMaterial(color, vec4(0.5, 1.0, 1.0, 1.0), emission, 3.0, lViewPos);
                                     #endif
 
@@ -1606,7 +1608,7 @@ if (mat < 11024) {
                                     emission += min(pow2(pow2(0.75 * dot(color.rgb, color.rgb))), 5.0);
                                     color.gb *= pow(vec2(0.8, 0.7), vec2(sqrt(emission) * 0.5));
                                     
-                                    #ifdef DISTANT_LIGHT_BOKEH
+                                    #if defined DISTANT_LIGHT_BOKEH && defined GBUFFERS_TERRAIN
                                         DoDistantLightBokehMaterial(color, vec4(1.0, 0.6, 0.2, 1.0), emission, 5.0, lViewPos);
                                     #endif
 
@@ -1623,7 +1625,7 @@ if (mat < 11024) {
                                     emission = 1.45 * max0(color.g - color.r * 2.0);
                                     emission += 1.17 * min(pow2(pow2(0.55 * dot(color.rgb, color.rgb))), 3.5);
 
-                                    #ifdef DISTANT_LIGHT_BOKEH
+                                    #if defined DISTANT_LIGHT_BOKEH && defined GBUFFERS_TERRAIN
                                         DoDistantLightBokehMaterial(color, vec4(0.5, 1.0, 1.0, 1.0), emission, 3.0, lViewPos);
                                     #endif
 
@@ -1727,7 +1729,7 @@ if (mat < 11024) {
                                     #include "/lib/materials/specificMaterials/terrain/redstoneTorch.glsl"
                                     emission += 0.0001; // No light reducing during noon
 
-                                    #ifdef DISTANT_LIGHT_BOKEH
+                                    #if defined DISTANT_LIGHT_BOKEH && defined GBUFFERS_TERRAIN
                                         DoDistantLightBokehMaterial(color, vec4(1.0, 0.0, 0.0, 1.0), emission, 5.0, lViewPos);
                                     #endif
                                 }
@@ -1846,7 +1848,7 @@ if (mat < 11024) {
                                         maRecolor = vec3(emission * 0.2);
                                     }
 
-                                    #ifdef DISTANT_LIGHT_BOKEH
+                                    #if defined DISTANT_LIGHT_BOKEH && defined GBUFFERS_TERRAIN
                                         DoDistantLightBokehMaterial(emission, 5.0, lViewPos);
                                     #endif
                                 }
@@ -1880,7 +1882,7 @@ if (mat < 11024) {
                                     float dotColor = dot(color.rgb, color.rgb);
                                     emission = min(pow2(pow2(pow2(dotColor * 0.6))), 6.0) * 0.8 + 0.5;
 
-                                    #ifdef DISTANT_LIGHT_BOKEH
+                                    #if defined DISTANT_LIGHT_BOKEH && defined GBUFFERS_TERRAIN
                                         DoDistantLightBokehMaterial(emission, 2.5, lViewPos);
                                     #endif
                                 }
