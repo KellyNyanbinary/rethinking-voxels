@@ -1,3 +1,6 @@
 *.zip
+.github
+.agents
+.vscode
 
 ComplementaryUnbound_*
