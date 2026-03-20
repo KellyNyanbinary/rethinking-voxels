@@ -27,7 +27,7 @@ mat4 gbufferPreviousProjection = vxProjPrev;
 
 //Pipeline//
 layout(location = 0) out vec4 gbufferData0;
-layout(location = 1) out vec4 gbufferData1;
+layout(location = 1) out vec4 gbufferData6;
 
 //Common Variables//
 vec3 sunVec = GetSunVector();
@@ -186,7 +186,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 
     // Writing to: 0, 6 (defined in voxy.json)
     gbufferData0 = color;
-    gbufferData1 = vec4(smoothnessD, materialMask, skyLightFactor, 1.0);
+    gbufferData6 = vec4(smoothnessD, materialMask, skyLightFactor, 1.0);
 }
 
 #endif
